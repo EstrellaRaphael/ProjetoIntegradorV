@@ -8,6 +8,8 @@ import './types'
 import prismaPlugin from './plugins/prisma'
 import authenticatePlugin from './plugins/authenticate'
 import routes from './routes'
+import { startGradeWorker } from './workers/gradeWorker'
+import { startNotificacaoWorker } from './workers/notificacaoWorker'
 
 const fastify = Fastify({ logger: true })
 
@@ -45,6 +47,10 @@ fastify.setErrorHandler((err, _request, reply) => {
 const start = async (): Promise<void> => {
   try {
     await fastify.listen({ port: Number(process.env.PORT) || 3005, host: '0.0.0.0' })
+
+    // Inicia workers assíncronos após o servidor estar no ar
+    startGradeWorker(fastify.prisma)
+    startNotificacaoWorker(fastify.prisma)
   } catch (err) {
     fastify.log.error(err)
     process.exit(1)
