@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Acesso ao Sistema - Gestão Escolar</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-tint": "#3755c3",
+                        "on-surface": "#111c2d",
+                        "on-secondary-fixed-variant": "#3a485b",
+                        "surface-container-high": "#dee8ff",
+                        "on-tertiary": "#ffffff",
+                        "on-surface-variant": "#444653",
+                        "inverse-surface": "#263143",
+                        "on-secondary-container": "#57657a",
+                        "primary": "#00288e",
+                        "primary-container": "#1e40af",
+                        "surface": "#f9f9ff",
+                        "on-tertiary-container": "#56d474",
+                        "surface-container-low": "#f0f3ff",
+                        "on-primary": "#ffffff",
+                        "on-background": "#111c2d",
+                        "on-primary-fixed-variant": "#173bab",
+                        "tertiary": "#003e17",
+                        "on-error-container": "#93000a",
+                        "error": "#ba1a1a",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary": "#515f74",
+                        "on-secondary": "#ffffff",
+                        "on-primary-fixed": "#001453",
+                        "secondary-container": "#d5e3fc",
+                        "error-container": "#ffdad6",
+                        "tertiary-fixed-dim": "#62df7d",
+                        "surface-container-highest": "#d8e3fb",
+                        "surface-bright": "#f9f9ff",
+                        "tertiary-fixed": "#7ffc97",
+                        "inverse-on-surface": "#ecf1ff",
+                        "on-primary-container": "#a8b8ff",
+                        "on-secondary-fixed": "#0d1c2e",
+                        "secondary-fixed": "#d5e3fc",
+                        "background": "#f9f9ff",
+                        "surface-variant": "#d8e3fb",
+                        "outline": "#757684",
+                        "surface-container": "#e7eeff",
+                        "on-error": "#ffffff",
+                        "inverse-primary": "#b8c4ff",
+                        "primary-fixed": "#dde1ff",
+                        "secondary-fixed-dim": "#b9c7df",
+                        "on-tertiary-fixed": "#002109",
+                        "on-tertiary-fixed-variant": "#005320",
+                        "surface-dim": "#cfdaf2",
+                        "tertiary-container": "#005823",
+                        "primary-fixed-dim": "#b8c4ff",
+                        "outline-variant": "#c4c5d5"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Inter"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f9f9ff;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+        }
+        .ambient-shadow {
+            box-shadow: 0 10px 25px -5px rgba(30, 41, 59, 0.04), 0 8px 10px -6px rgba(30, 41, 59, 0.04);
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface min-h-screen flex items-center justify-center p-6">
+<!-- Background Gradient Layer -->
+<div class="fixed inset-0 z-0 bg-gradient-to-br from-surface to-surface-container-low pointer-events-none"></div>
+<!-- Login Container -->
+<main class="relative z-10 w-full max-w-[420px]">
+<div class="bg-surface-container-lowest rounded-xl p-8 md:p-10 ambient-shadow border border-outline-variant/10">
+<!-- Logo Area -->
+<div class="flex flex-col items-center mb-10">
+<div class="w-16 h-16 bg-primary-container rounded-xl flex items-center justify-center mb-4 text-on-primary">
+<span class="material-symbols-outlined text-4xl" data-icon="school">school</span>
+</div>
+<h1 class="text-on-surface text-xl font-bold tracking-tight">Gestão Escolar</h1>
+<p class="text-on-surface-variant text-sm font-medium mt-1">Portal Acadêmico</p>
+</div>
+<!-- Title -->
+<div class="mb-8">
+<h2 class="text-primary text-2xl font-bold tracking-tight">Acesso ao Sistema</h2>
+<p class="text-on-surface-variant text-sm mt-1">Insira suas credenciais para continuar</p>
+</div>
+<!-- Form -->
+<form class="space-y-6">
+<!-- Email Field -->
+<div class="space-y-2">
+<label class="block text-on-surface-variant text-[0.75rem] font-medium uppercase tracking-wider" for="email">E-mail</label>
+<div class="relative group">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-outline text-xl" data-icon="mail">mail</span>
+<input class="w-full pl-10 pr-4 py-3 bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/20 text-sm transition-all placeholder:text-outline/60" id="email" placeholder="nome@instituicao.edu.br" type="email"/>
+</div>
+</div>
+<!-- Password Field -->
+<div class="space-y-2">
+<div class="flex justify-between items-center">
+<label class="block text-on-surface-variant text-[0.75rem] font-medium uppercase tracking-wider" for="password">Senha</label>
+<a class="text-primary text-[0.75rem] font-semibold hover:underline" href="#">Esqueceu a senha?</a>
+</div>
+<div class="relative group">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-outline text-xl" data-icon="lock">lock</span>
+<input class="w-full pl-10 pr-12 py-3 bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary/20 text-sm transition-all placeholder:text-outline/60" id="password" placeholder="••••••••" type="password"/>
+<button class="absolute right-3 top-1/2 -translate-y-1/2 text-outline hover:text-primary transition-colors" type="button">
+<span class="material-symbols-outlined text-xl" data-icon="visibility">visibility</span>
+</button>
+</div>
+</div>
+<!-- Error Message Container (Visible for demonstration) -->
+<div class="flex items-start gap-2 p-3 bg-error-container/50 rounded-lg border border-error/10">
+<span class="material-symbols-outlined text-error text-[20px]" data-icon="error">error</span>
+<p class="text-error text-xs font-medium leading-tight">Credenciais inválidas. Por favor, verifique seu e-mail e senha e tente novamente.</p>
+</div>
+<!-- Action Button -->
+<button class="w-full bg-primary hover:bg-primary-container text-on-primary font-bold py-3.5 rounded-lg transition-all active:scale-[0.98] flex items-center justify-center gap-3 shadow-lg shadow-primary/20" type="submit">
+<!-- Loading Spinner (SVG) -->
+<svg class="animate-spin h-5 w-5 text-on-primary opacity-80" fill="none" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+<path class="opacity-75" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" fill="currentColor"></path>
+</svg>
+<span>Entrar</span>
+</button>
+</form>
+<!-- Footer -->
+<div class="mt-8 pt-8 border-t border-outline-variant/10 text-center">
+<p class="text-on-surface-variant text-xs">
+                    Problemas com o acesso? <a class="text-primary font-bold hover:underline" href="#">Contate o Suporte TI</a>
+</p>
+</div>
+</div>
+<!-- Language Selector (Visual only) -->
+<div class="mt-6 flex justify-center gap-4 text-[0.68rem] font-medium text-outline">
+<span class="text-primary cursor-default">Português (BR)</span>
+<span class="hover:text-on-surface cursor-pointer transition-colors">English</span>
+<span class="hover:text-on-surface cursor-pointer transition-colors">Español</span>
+</div>
+</main>
+<!-- Decorative Bottom Texture -->
+<div class="fixed bottom-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-surface-tint to-primary-container"></div>
+</body></html>

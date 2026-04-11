@@ -135,7 +135,24 @@ ProjetoIntegradorV/
 ├── MS03_turmas_e_disciplinas/       ← porta 3003
 ├── MS04_avaliacoes_e_notas/         ← porta 3004 (tem services/nota.service.ts)
 ├── MS05_comunicacao_escolar/        ← porta 3005
-└── frontend/                        ← React SPA (porta 5173)
+│
+├── frontend/                        ← React SPA (porta 5173)
+│   ├── src/
+│   │   ├── components/layout/       ← AppLayout, Sidebar, Topbar
+│   │   ├── components/ui/           ← Modal, ConfirmDialog, EmptyState, Pagination
+│   │   ├── pages/                   ← 22 telas (Login, Dashboards, CRUD, Boletim, etc.)
+│   │   ├── services/api.ts          ← Clientes Axios para cada microsserviço
+│   │   ├── store/authStore.ts       ← Zustand: tokens JWT, user, login, logout
+│   │   ├── types/index.ts           ← Tipos TypeScript de todos os domínios
+│   │   └── router.tsx               ← Rotas + guard RequireAuth
+│   ├── stitch/                      ← Design de referência (AI Stitch)
+│   ├── tailwind.config.js           ← Tokens de cor do design system
+│   └── README.md
+│
+├── .claude/launch.json              ← Config de preview para todos os servidores
+├── GUIA_DE_TESTES.md                ← Guia completo de execução e testes
+├── FRONTEND_SPEC.md                 ← Especificação do frontend (para design)
+└── STITCH_PROMPT.md                 ← Prompt usado para gerar o design no Stitch
 ```
 
 ---

@@ -1,0 +1,154 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  *, *::before, *::after { box-sizing: border-box; }
+  html { height: 100%; }
+  body {
+    @apply bg-background text-on-background antialiased;
+    font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    margin: 0;
+    height: 100%;
+  }
+  #root { height: 100%; }
+
+  ::-webkit-scrollbar        { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track  { background: transparent; }
+  ::-webkit-scrollbar-thumb  { @apply bg-outline-variant rounded-full; }
+  ::-webkit-scrollbar-thumb:hover { @apply bg-outline; }
+}
+
+@layer components {
+  /* ── Buttons ──────────────────────────────────────────────────────── */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded
+           bg-gradient-to-b from-[#00288e] to-[#1e40af]
+           text-white text-sm font-medium
+           transition-opacity hover:opacity-90 active:opacity-80
+           disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer;
+  }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded
+           bg-surface-container-high text-on-surface text-sm font-medium
+           transition-colors hover:bg-surface-container cursor-pointer;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded
+           text-primary text-sm font-medium
+           transition-colors hover:bg-surface-container-low cursor-pointer;
+  }
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded
+           bg-error-container text-on-error-container text-sm font-medium
+           transition-opacity hover:opacity-80 cursor-pointer;
+  }
+  .btn-sm {
+    @apply px-3 py-1.5 text-xs;
+  }
+
+  /* ── Form ─────────────────────────────────────────────────────────── */
+  .input-field {
+    @apply w-full bg-surface-container-lowest text-on-surface text-sm
+           px-3 py-2.5 rounded border border-outline-variant
+           outline-none transition-colors
+           focus:border-primary-container focus:ring-2 focus:ring-primary-container/20
+           placeholder:text-on-surface-variant/50;
+  }
+  .input-error {
+    @apply border-error focus:border-error focus:ring-error/20;
+  }
+  .field-label {
+    @apply block text-xs font-medium text-on-surface-variant mb-1.5;
+  }
+  .field-error {
+    @apply text-xs text-error mt-1;
+  }
+
+  /* ── Cards ────────────────────────────────────────────────────────── */
+  .card {
+    @apply bg-surface-container-lowest rounded-xl shadow-ambient;
+  }
+  .card-padded {
+    @apply card p-6;
+  }
+
+  /* ── Badges ───────────────────────────────────────────────────────── */
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+  .badge-success   { @apply bg-success/10 text-success; }
+  .badge-danger    { @apply bg-error-container text-on-error-container; }
+  .badge-warning   { @apply bg-warning-container text-warning; }
+  .badge-primary   { @apply bg-primary-fixed text-primary; }
+  .badge-secondary { @apply bg-secondary-container text-on-surface-variant; }
+  .badge-neutral   { @apply bg-surface-container text-on-surface-variant; }
+
+  /* ── Tables ───────────────────────────────────────────────────────── */
+  .table-wrap {
+    @apply card overflow-hidden;
+  }
+  .table-head {
+    @apply bg-surface-container-low;
+  }
+  .th {
+    @apply px-4 py-3 text-left text-xs font-semibold text-on-surface-variant uppercase tracking-wider whitespace-nowrap;
+  }
+  .th-right {
+    @apply th text-right;
+  }
+  .td {
+    @apply px-4 py-3 text-sm text-on-surface;
+  }
+  .td-right {
+    @apply td text-right tabular-nums;
+  }
+  .tr-row {
+    @apply border-t border-outline-variant/30 hover:bg-surface-container-low/60 transition-colors;
+  }
+
+  /* ── Page layout ──────────────────────────────────────────────────── */
+  .page-header {
+    @apply flex items-start justify-between mb-6;
+  }
+  .page-title {
+    @apply text-2xl font-semibold text-on-surface;
+  }
+  .page-subtitle {
+    @apply text-sm text-on-surface-variant mt-0.5;
+  }
+
+  /* ── Stat card ────────────────────────────────────────────────────── */
+  .stat-card {
+    @apply card-padded flex items-center gap-4;
+  }
+  .stat-icon {
+    @apply w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0;
+  }
+  .stat-value {
+    @apply text-3xl font-bold text-on-surface tabular-nums;
+  }
+  .stat-label {
+    @apply text-sm text-on-surface-variant mt-0.5;
+  }
+
+  /* ── Nav item (sidebar) ───────────────────────────────────────────── */
+  .nav-item {
+    @apply flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
+           text-[#94a3b8] transition-all cursor-pointer
+           hover:bg-sidebar-hover hover:text-white;
+  }
+  .nav-item.active {
+    @apply bg-sidebar-active text-white;
+  }
+  .nav-item svg {
+    @apply w-5 h-5 flex-shrink-0;
+  }
+
+  /* ── Divider ──────────────────────────────────────────────────────── */
+  .divider {
+    @apply border-t border-outline-variant/40 my-4;
+  }
+}

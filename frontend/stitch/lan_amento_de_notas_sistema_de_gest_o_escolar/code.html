@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+
+<html class="light" lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Lançar Notas - Gestão Escolar</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-tint": "#3755c3",
+                    "on-surface": "#111c2d",
+                    "on-secondary-fixed-variant": "#3a485b",
+                    "surface-container-high": "#dee8ff",
+                    "on-tertiary": "#ffffff",
+                    "on-surface-variant": "#444653",
+                    "inverse-surface": "#263143",
+                    "on-secondary-container": "#57657a",
+                    "primary": "#00288e",
+                    "primary-container": "#1e40af",
+                    "surface": "#f9f9ff",
+                    "on-tertiary-container": "#56d474",
+                    "surface-container-low": "#f0f3ff",
+                    "on-primary": "#ffffff",
+                    "on-background": "#111c2d",
+                    "on-primary-fixed-variant": "#173bab",
+                    "tertiary": "#003e17",
+                    "on-error-container": "#93000a",
+                    "error": "#ba1a1a",
+                    "surface-container-lowest": "#ffffff",
+                    "secondary": "#515f74",
+                    "on-secondary": "#ffffff",
+                    "on-primary-fixed": "#001453",
+                    "secondary-container": "#d5e3fc",
+                    "error-container": "#ffdad6",
+                    "tertiary-fixed-dim": "#62df7d",
+                    "surface-container-highest": "#d8e3fb",
+                    "surface-bright": "#f9f9ff",
+                    "tertiary-fixed": "#7ffc97",
+                    "inverse-on-surface": "#ecf1ff",
+                    "on-primary-container": "#a8b8ff",
+                    "on-secondary-fixed": "#0d1c2e",
+                    "secondary-fixed": "#d5e3fc",
+                    "background": "#f9f9ff",
+                    "surface-variant": "#d8e3fb",
+                    "outline": "#757684",
+                    "surface-container": "#e7eeff",
+                    "on-error": "#ffffff",
+                    "inverse-primary": "#b8c4ff",
+                    "primary-fixed": "#dde1ff",
+                    "secondary-fixed-dim": "#b9c7df",
+                    "on-tertiary-fixed": "#002109",
+                    "on-tertiary-fixed-variant": "#005320",
+                    "surface-dim": "#cfdaf2",
+                    "tertiary-container": "#005823",
+                    "primary-fixed-dim": "#b8c4ff",
+                    "outline-variant": "#c4c5d5"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "fontFamily": {
+                    "headline": ["Inter"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body { font-family: 'Inter', sans-serif; }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface min-h-screen">
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-0 h-full w-[240px] z-50 bg-slate-900 flex flex-col py-6 shadow-xl">
+<div class="px-6 mb-8">
+<h1 class="text-white font-black text-lg tracking-tight">Instituição</h1>
+<p class="text-blue-400 text-xs font-medium uppercase tracking-widest">Portal Acadêmico</p>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center text-slate-400 hover:text-white py-3 px-4 hover:bg-slate-800/50 transition-all duration-200 font-inter text-sm font-medium tracking-tight" href="#">
+<span class="material-symbols-outlined mr-3">dashboard</span> Dashboard
+            </a>
+<a class="flex items-center text-slate-400 hover:text-white py-3 px-4 hover:bg-slate-800/50 transition-all duration-200 font-inter text-sm font-medium tracking-tight" href="#">
+<span class="material-symbols-outlined mr-3">school</span> Alunos
+            </a>
+<a class="flex items-center text-slate-400 hover:text-white py-3 px-4 hover:bg-slate-800/50 transition-all duration-200 font-inter text-sm font-medium tracking-tight" href="#">
+<span class="material-symbols-outlined mr-3">person_book</span> Professores
+            </a>
+<a class="flex items-center text-slate-400 hover:text-white py-3 px-4 hover:bg-slate-800/50 transition-all duration-200 font-inter text-sm font-medium tracking-tight" href="#">
+<span class="material-symbols-outlined mr-3">groups</span> Turmas
+            </a>
+<a class="flex items-center text-slate-400 hover:text-white py-3 px-4 hover:bg-slate-800/50 transition-all duration-200 font-inter text-sm font-medium tracking-tight" href="#">
+<span class="material-symbols-outlined mr-3">calendar_today</span> Frequência
+            </a>
+<!-- Active Tab: Notas -->
+<a class="flex items-center bg-blue-600/10 text-blue-400 border-r-4 border-blue-500 py-3 px-4 font-inter text-sm font-medium tracking-tight" href="#">
+<span class="material-symbols-outlined mr-3" style="font-variation-settings: 'FILL' 1;">grade</span> Notas
+            </a>
+<a class="flex items-center text-slate-400 hover:text-white py-3 px-4 hover:bg-slate-800/50 transition-all duration-200 font-inter text-sm font-medium tracking-tight" href="#">
+<span class="material-symbols-outlined mr-3">mail</span> Comunicações
+            </a>
+<a class="flex items-center text-slate-400 hover:text-white py-3 px-4 hover:bg-slate-800/50 transition-all duration-200 font-inter text-sm font-medium tracking-tight" href="#">
+<span class="material-symbols-outlined mr-3">settings</span> Configurações
+            </a>
+</nav>
+<div class="px-4 mt-auto">
+<button class="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-3 rounded-xl transition-all active:scale-[0.98]">
+                Matrícula Rápida
+            </button>
+<button class="flex items-center text-slate-400 hover:text-white py-3 px-4 mt-4 w-full text-sm">
+<span class="material-symbols-outlined mr-3">logout</span> Sair
+            </button>
+</div>
+</aside>
+<!-- TopNavBar -->
+<header class="fixed top-0 right-0 left-[240px] h-16 z-40 bg-white border-b border-slate-100 flex justify-between items-center px-8 shadow-sm">
+<div class="flex items-center gap-4">
+<span class="text-xl font-bold text-blue-700">Gestão Escolar</span>
+<div class="h-4 w-[1px] bg-slate-200"></div>
+<span class="text-slate-500 text-sm font-medium">Lançar Notas</span>
+</div>
+<div class="flex items-center gap-6">
+<button class="text-slate-500 hover:bg-slate-50 p-2 rounded-full transition-colors relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full border-2 border-white"></span>
+</button>
+<div class="flex items-center gap-3 pl-4 border-l border-slate-100">
+<div class="text-right">
+<p class="text-xs font-bold text-on-surface">Prof. Ricardo Silva</p>
+<p class="text-[10px] text-slate-400">Matemática Avançada</p>
+</div>
+<img alt="Foto do perfil do usuário" class="w-10 h-10 rounded-full border-2 border-white shadow-sm" data-alt="professional headshot of a middle-aged man with short dark hair and a confident smile, clean background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCcQ9YElz4eaW6CFlUmoXx2U7k96b6Fp0GZxReW7_Dg-NeHGwt7VTdENqtbCsJzJIUSchh3Y69_t4sadi21CfhETSydwSI2qsxMsL2FY00-_8iwkWP1DSrapCuS1-LEImE2b5DSPeR53Xw7cgD7p4Fd3g50AXFWw7sFeNO03hSZnLisoTm8NkwXcaLhjzcr1Huz5JG9IerBJdygR1mtTtxScsKhu9ik2v48zTihay59EC7MEF6YKVpgur0YXFJC9dlgKAAaCpcr-OY"/>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="ml-[240px] pt-16 min-h-screen">
+<div class="p-8 max-w-7xl mx-auto">
+<!-- Academic Summary Header Card -->
+<section class="mb-8 rounded-xl overflow-hidden shadow-sm">
+<div class="bg-surface-container-highest px-8 py-6 flex flex-wrap justify-between items-end gap-6">
+<div>
+<div class="flex items-center gap-3 mb-2">
+<span class="bg-primary-container text-white px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase">Prova</span>
+<h2 class="text-2xl font-bold text-primary tracking-tight">Prova N1</h2>
+</div>
+<p class="text-on-surface-variant font-medium">Cálculo Diferencial e Integral I</p>
+</div>
+<div class="flex gap-8">
+<div class="text-center">
+<p class="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-1">Turma</p>
+<p class="text-primary font-bold">ENG-2024-A</p>
+</div>
+<div class="text-center">
+<p class="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-1">Bimestre</p>
+<p class="text-primary font-bold">1º Bimestre</p>
+</div>
+<div class="text-center">
+<p class="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-1">Data</p>
+<p class="text-primary font-bold">15/05/2024</p>
+</div>
+</div>
+</div>
+<div class="bg-white p-8">
+<div class="flex justify-between items-center mb-6">
+<div class="relative w-72">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">search</span>
+<input class="w-full bg-surface-container-low border-none rounded-lg pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-primary/20 transition-all" placeholder="Buscar aluno por nome..." type="text"/>
+</div>
+<button class="bg-primary text-white px-6 py-2.5 rounded-lg font-bold text-sm flex items-center gap-2 hover:opacity-90 active:scale-95 transition-all shadow-lg shadow-primary/20">
+<span class="material-symbols-outlined text-lg">save</span> Salvar Tudo
+                        </button>
+</div>
+<!-- Data Table -->
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low text-on-surface-variant uppercase text-[10px] font-black tracking-widest">
+<th class="px-6 py-4 rounded-tl-lg">Aluno</th>
+<th class="px-6 py-4">Matrícula</th>
+<th class="px-6 py-4 text-center">Nota (0-10)</th>
+<th class="px-6 py-4">Status</th>
+<th class="px-6 py-4 text-right rounded-tr-lg">Ação</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-50">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-container-low/30 transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-primary font-bold text-xs">AF</div>
+<span class="text-sm font-semibold text-on-surface">Ana Flávia Souza</span>
+</div>
+</td>
+<td class="px-6 py-4 text-sm text-slate-500 font-mono">202401055</td>
+<td class="px-6 py-4 text-center">
+<input class="w-20 mx-auto text-center font-bold text-sm py-1.5 rounded-lg bg-surface-container-lowest border-2 border-on-tertiary-container focus:ring-0 focus:border-on-tertiary-container transition-all" max="10" min="0" step="0.5" type="number" value="8.5"/>
+</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-tertiary-fixed text-on-tertiary-fixed-variant text-[10px] font-bold uppercase">
+                                            Salvo <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'wght' 700;">check_circle</span>
+</span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="text-slate-300 hover:text-primary transition-colors">
+<span class="material-symbols-outlined">save</span>
+</button>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-container-low/30 transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold text-xs">BP</div>
+<span class="text-sm font-semibold text-on-surface">Bruno Pimentel</span>
+</div>
+</td>
+<td class="px-6 py-4 text-sm text-slate-500 font-mono">202401082</td>
+<td class="px-6 py-4 text-center">
+<input class="w-20 mx-auto text-center font-bold text-sm py-1.5 rounded-lg bg-surface-container-lowest border-2 border-slate-200 focus:ring-0 focus:border-primary transition-all" max="10" min="0" placeholder="-" step="0.5" type="number"/>
+</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-500 text-[10px] font-bold uppercase">
+                                            Pendente
+                                        </span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="text-primary hover:scale-110 transition-transform">
+<span class="material-symbols-outlined">save</span>
+</button>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-container-low/30 transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center text-red-600 font-bold text-xs">CO</div>
+<span class="text-sm font-semibold text-on-surface">Carlos Oliveira</span>
+</div>
+</td>
+<td class="px-6 py-4 text-sm text-slate-500 font-mono">202401121</td>
+<td class="px-6 py-4 text-center">
+<input class="w-20 mx-auto text-center font-bold text-sm py-1.5 rounded-lg bg-surface-container-lowest border-2 border-error focus:ring-0 focus:border-error transition-all text-error" max="10" min="0" step="0.5" type="number" value="4.5"/>
+</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-tertiary-fixed text-on-tertiary-fixed-variant text-[10px] font-bold uppercase">
+                                            Salvo <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'wght' 700;">check_circle</span>
+</span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="text-slate-300 hover:text-primary transition-colors">
+<span class="material-symbols-outlined">save</span>
+</button>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-surface-container-low/30 transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-bold text-xs">DM</div>
+<span class="text-sm font-semibold text-on-surface">Daniela Martins</span>
+</div>
+</td>
+<td class="px-6 py-4 text-sm text-slate-500 font-mono">202401099</td>
+<td class="px-6 py-4 text-center">
+<input class="w-20 mx-auto text-center font-bold text-sm py-1.5 rounded-lg bg-surface-container-lowest border-2 border-on-tertiary-container focus:ring-0 focus:border-on-tertiary-container transition-all" max="10" min="0" step="0.5" type="number" value="7.0"/>
+</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-tertiary-fixed text-on-tertiary-fixed-variant text-[10px] font-bold uppercase">
+                                            Salvo <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'wght' 700;">check_circle</span>
+</span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="text-slate-300 hover:text-primary transition-colors">
+<span class="material-symbols-outlined">save</span>
+</button>
+</td>
+</tr>
+<!-- Row 5 -->
+<tr class="hover:bg-surface-container-low/30 transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-bold text-xs">ER</div>
+<span class="text-sm font-semibold text-on-surface">Eduardo Rocha</span>
+</div>
+</td>
+<td class="px-6 py-4 text-sm text-slate-500 font-mono">202401140</td>
+<td class="px-6 py-4 text-center">
+<input class="w-20 mx-auto text-center font-bold text-sm py-1.5 rounded-lg bg-surface-container-lowest border-2 border-slate-200 focus:ring-0 focus:border-primary transition-all" max="10" min="0" placeholder="-" step="0.5" type="number"/>
+</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-500 text-[10px] font-bold uppercase">
+                                            Pendente
+                                        </span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="text-primary hover:scale-110 transition-transform">
+<span class="material-symbols-outlined">save</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Footer Table Stats -->
+<div class="mt-8 pt-6 border-t border-slate-50 flex justify-between items-center text-xs text-slate-400 font-medium">
+<div class="flex gap-6">
+<p>Total de Alunos: <span class="text-on-surface font-bold">42</span></p>
+<p>Notas Lançadas: <span class="text-on-tertiary-container font-bold">38</span></p>
+<p>Pendentes: <span class="text-error font-bold">4</span></p>
+</div>
+<p>Última alteração: hoje às 14:22</p>
+</div>
+</div>
+</section>
+<!-- Keyboard Shortcuts Bento Grid Section -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<div class="bg-surface-container-low p-6 rounded-xl border-l-4 border-primary">
+<div class="flex items-center gap-3 mb-3">
+<span class="material-symbols-outlined text-primary">keyboard</span>
+<h4 class="text-sm font-bold text-primary">Atalhos de Teclado</h4>
+</div>
+<div class="space-y-2">
+<div class="flex justify-between items-center text-[11px]">
+<span class="text-slate-500">Próximo Aluno</span>
+<kbd class="bg-white border border-slate-200 px-2 py-0.5 rounded shadow-sm font-mono text-on-surface">Enter</kbd>
+</div>
+<div class="flex justify-between items-center text-[11px]">
+<span class="text-slate-500">Salvar Tudo</span>
+<kbd class="bg-white border border-slate-200 px-2 py-0.5 rounded shadow-sm font-mono text-on-surface">Ctrl + S</kbd>
+</div>
+</div>
+</div>
+<div class="bg-surface-container-low p-6 rounded-xl border-l-4 border-tertiary-container">
+<div class="flex items-center gap-3 mb-3">
+<span class="material-symbols-outlined text-tertiary-container">analytics</span>
+<h4 class="text-sm font-bold text-tertiary-container">Desempenho da Turma</h4>
+</div>
+<div class="flex items-end gap-2">
+<p class="text-2xl font-black text-on-surface tracking-tighter">7.4</p>
+<p class="text-[10px] text-slate-500 font-bold pb-1 uppercase">Média Atual</p>
+</div>
+</div>
+<div class="bg-primary text-white p-6 rounded-xl relative overflow-hidden group">
+<div class="relative z-10">
+<h4 class="text-sm font-bold mb-1">Precisa de Ajuda?</h4>
+<p class="text-xs opacity-80 mb-4">Consulte as regras de arredondamento institucional.</p>
+<button class="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg text-xs font-bold backdrop-blur-sm transition-all">Ver Manual</button>
+</div>
+<span class="material-symbols-outlined absolute -bottom-4 -right-4 text-white/10 text-8xl transition-transform group-hover:scale-110">help_center</span>
+</div>
+</div>
+</div>
+</main>
+</body></html>

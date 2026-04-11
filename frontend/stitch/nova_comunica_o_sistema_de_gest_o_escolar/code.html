@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Nova Comunicação - Gestão Escolar</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-tint": "#3755c3",
+                        "on-surface": "#111c2d",
+                        "on-secondary-fixed-variant": "#3a485b",
+                        "surface-container-high": "#dee8ff",
+                        "on-tertiary": "#ffffff",
+                        "on-surface-variant": "#444653",
+                        "inverse-surface": "#263143",
+                        "on-secondary-container": "#57657a",
+                        "primary": "#00288e",
+                        "primary-container": "#1e40af",
+                        "surface": "#f9f9ff",
+                        "on-tertiary-container": "#56d474",
+                        "surface-container-low": "#f0f3ff",
+                        "on-primary": "#ffffff",
+                        "on-background": "#111c2d",
+                        "on-primary-fixed-variant": "#173bab",
+                        "tertiary": "#003e17",
+                        "on-error-container": "#93000a",
+                        "error": "#ba1a1a",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary": "#515f74",
+                        "on-secondary": "#ffffff",
+                        "on-primary-fixed": "#001453",
+                        "secondary-container": "#d5e3fc",
+                        "error-container": "#ffdad6",
+                        "tertiary-fixed-dim": "#62df7d",
+                        "surface-container-highest": "#d8e3fb",
+                        "surface-bright": "#f9f9ff",
+                        "tertiary-fixed": "#7ffc97",
+                        "inverse-on-surface": "#ecf1ff",
+                        "on-primary-container": "#a8b8ff",
+                        "on-secondary-fixed": "#0d1c2e",
+                        "secondary-fixed": "#d5e3fc",
+                        "background": "#f9f9ff",
+                        "surface-variant": "#d8e3fb",
+                        "outline": "#757684",
+                        "surface-container": "#e7eeff",
+                        "on-error": "#ffffff",
+                        "inverse-primary": "#b8c4ff",
+                        "primary-fixed": "#dde1ff",
+                        "secondary-fixed-dim": "#b9c7df",
+                        "on-tertiary-fixed": "#002109",
+                        "on-tertiary-fixed-variant": "#005320",
+                        "surface-dim": "#cfdaf2",
+                        "tertiary-container": "#005823",
+                        "primary-fixed-dim": "#b8c4ff",
+                        "outline-variant": "#c4c5d5"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Inter"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #d8e3fb; border-radius: 10px; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface flex overflow-hidden">
+<!-- SideNavBar (Shared Component) -->
+<aside class="fixed left-0 top-0 h-full w-[240px] z-50 bg-slate-900 flex flex-col h-full py-6 shadow-xl font-inter text-sm font-medium tracking-tight">
+<div class="px-6 mb-8">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-blue-600 rounded flex items-center justify-center text-white font-black text-lg">I</div>
+<div>
+<h2 class="text-white font-black text-lg leading-none">Instituição</h2>
+<p class="text-slate-400 text-[10px] uppercase tracking-widest mt-1">Portal Acadêmico</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 space-y-1">
+<div class="text-slate-400 hover:text-white py-3 px-4 flex items-center gap-3 hover:bg-slate-800/50 transition-all duration-200 active:scale-[0.98]">
+<span class="material-symbols-outlined">dashboard</span>
+<span>Dashboard</span>
+</div>
+<div class="text-slate-400 hover:text-white py-3 px-4 flex items-center gap-3 hover:bg-slate-800/50 transition-all duration-200 active:scale-[0.98]">
+<span class="material-symbols-outlined">school</span>
+<span>Alunos</span>
+</div>
+<div class="text-slate-400 hover:text-white py-3 px-4 flex items-center gap-3 hover:bg-slate-800/50 transition-all duration-200 active:scale-[0.98]">
+<span class="material-symbols-outlined">person_book</span>
+<span>Professores</span>
+</div>
+<div class="text-slate-400 hover:text-white py-3 px-4 flex items-center gap-3 hover:bg-slate-800/50 transition-all duration-200 active:scale-[0.98]">
+<span class="material-symbols-outlined">groups</span>
+<span>Turmas</span>
+</div>
+<div class="text-slate-400 hover:text-white py-3 px-4 flex items-center gap-3 hover:bg-slate-800/50 transition-all duration-200 active:scale-[0.98]">
+<span class="material-symbols-outlined">calendar_today</span>
+<span>Frequência</span>
+</div>
+<div class="text-slate-400 hover:text-white py-3 px-4 flex items-center gap-3 hover:bg-slate-800/50 transition-all duration-200 active:scale-[0.98]">
+<span class="material-symbols-outlined">grade</span>
+<span>Notas</span>
+</div>
+<div class="bg-blue-600/10 text-blue-400 border-r-4 border-blue-500 py-3 px-4 flex items-center gap-3 active:scale-[0.98]">
+<span class="material-symbols-outlined">mail</span>
+<span>Comunicações</span>
+</div>
+<div class="text-slate-400 hover:text-white py-3 px-4 flex items-center gap-3 hover:bg-slate-800/50 transition-all duration-200 active:scale-[0.98]">
+<span class="material-symbols-outlined">settings</span>
+<span>Configurações</span>
+</div>
+</nav>
+<div class="px-4 mt-6">
+<button class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold shadow-lg shadow-blue-900/20 active:scale-95 transition-all">
+                Matrícula Rápida
+            </button>
+</div>
+<div class="mt-auto px-4 border-t border-slate-800 pt-4">
+<div class="text-slate-400 hover:text-white py-3 px-4 flex items-center gap-3 hover:bg-slate-800/50 transition-all duration-200 active:scale-[0.98]">
+<span class="material-symbols-outlined">logout</span>
+<span>Sair</span>
+</div>
+</div>
+</aside>
+<!-- Main Content Canvas (Background for the Modal) -->
+<main class="flex-1 ml-[240px] relative h-screen bg-surface">
+<!-- TopNavBar (Shared Component) -->
+<header class="fixed top-0 right-0 left-[240px] h-16 z-40 bg-white border-b border-slate-100 flex justify-between items-center px-6 shadow-sm font-inter text-sm font-medium">
+<div class="flex items-center gap-4">
+<span class="text-xl font-bold text-blue-700">Gestão Escolar</span>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-slate-500 hover:bg-slate-50 transition-colors rounded-full">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<div class="flex items-center gap-2 pl-4 border-l border-slate-100">
+<span class="text-slate-700">Admin</span>
+<img alt="Foto do perfil do usuário" class="w-8 h-8 rounded-full border border-slate-200" data-alt="portrait of a professional male administrator in a clean office setting, looking friendly and capable" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCVGY9eYS2iDu-Ueo-DNR27LJzfVMMrmb_d9JQqypQyv_UaM9Kox3eeO5AEM86At0EUsbjQqZXoAiGMwCemUIhVON8i_V3mR41jdJFeT17vF5F1yRYaaIgwbjvai76tlbFIytcTfFtjyIqu7b1D23PW0-BB9gyTNh7F2EZi6LcsN8Po9haaUK01-VAfwGakb8VMFXQ11fs6WAI0MmjVxdW0ZNro9Lww0IcCqcbwL8fJ97BGU9Sb-SoCAzQiTyz0u4ZDHBZ6_X6uZ74"/>
+</div>
+</div>
+</header>
+<!-- Communications Page Content (Simulated Background) -->
+<div class="mt-16 p-8 opacity-40 select-none pointer-events-none">
+<div class="flex justify-between items-end mb-10">
+<div>
+<p class="text-on-surface-variant text-xs font-medium uppercase tracking-widest mb-1">Institucional</p>
+<h1 class="text-3xl font-bold tracking-tight text-on-surface">Comunicações</h1>
+</div>
+<button class="bg-primary text-on-primary px-5 py-2.5 rounded-lg font-semibold text-sm">Nova Mensagem</button>
+</div>
+<!-- Bento Grid of Communications (Placeholder) -->
+<div class="grid grid-cols-12 gap-6">
+<div class="col-span-8 bg-surface-container-lowest rounded-xl p-6 shadow-sm">
+<h3 class="text-lg font-bold mb-4">Mensagens Recentes</h3>
+<div class="space-y-4">
+<div class="flex items-center justify-between p-4 bg-surface-container-low rounded-lg">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-primary">campaign</span>
+<div>
+<p class="font-bold text-sm">Aviso de Feriado Prolongado</p>
+<p class="text-xs text-on-surface-variant">Para: Todos os Alunos</p>
+</div>
+</div>
+<span class="text-xs font-medium text-on-surface-variant">Ontem, 14:30</span>
+</div>
+<div class="flex items-center justify-between p-4 bg-surface-container-low rounded-lg">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-primary">priority_high</span>
+<div>
+<p class="font-bold text-sm">Reunião de Professores - 2º Trimestre</p>
+<p class="text-xs text-on-surface-variant">Para: Docentes</p>
+</div>
+</div>
+<span class="text-xs font-medium text-on-surface-variant">12 Mai, 09:15</span>
+</div>
+</div>
+</div>
+<div class="col-span-4 space-y-6">
+<div class="bg-primary-container text-on-primary-container p-6 rounded-xl shadow-sm">
+<span class="material-symbols-outlined mb-4">groups</span>
+<p class="text-2xl font-bold">1.240</p>
+<p class="text-xs opacity-80">Alcance total este mês</p>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-xl shadow-sm">
+<p class="text-sm font-bold mb-4">Canal de Destaque</p>
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-tertiary-fixed rounded flex items-center justify-center text-on-tertiary-fixed">
+<span class="material-symbols-outlined">mail</span>
+</div>
+<div>
+<p class="text-sm font-bold">E-mail Institucional</p>
+<p class="text-xs text-on-surface-variant">98% de taxa de abertura</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- DIM Overlay -->
+<div class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[60]"></div>
+<!-- NEW COMMUNICATION DRAWER -->
+<div class="fixed top-0 right-0 h-full w-[480px] bg-surface-container-lowest shadow-[-10px_0_40px_-15px_rgba(30,41,59,0.2)] z-[70] flex flex-col transform transition-transform duration-300">
+<!-- Header -->
+<div class="px-8 py-6 border-b border-outline-variant/15 flex items-center justify-between">
+<div>
+<h2 class="text-xl font-bold text-on-surface tracking-tight">Nova Comunicação</h2>
+<p class="text-xs text-on-surface-variant font-medium mt-1 uppercase tracking-wider">Configurar envio</p>
+</div>
+<button class="p-2 hover:bg-surface-container-low rounded-full transition-colors text-on-surface-variant">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<!-- Body -->
+<div class="flex-1 overflow-y-auto custom-scrollbar px-8 py-8 space-y-8">
+<!-- Assunto/Título -->
+<div class="space-y-2">
+<label class="block text-xs font-semibold text-on-surface-variant uppercase tracking-tighter" for="subject">Assunto / Título</label>
+<input class="w-full bg-surface-container-low border-none rounded-lg p-3 text-sm focus:ring-2 focus:ring-primary focus:bg-surface-container-lowest transition-all placeholder:text-outline/50" id="subject" placeholder="Ex: Aviso de Manutenção no Laboratório" type="text"/>
+</div>
+<!-- Destinatário Dropdown -->
+<div class="space-y-2">
+<label class="block text-xs font-semibold text-on-surface-variant uppercase tracking-tighter" for="recipient">Destinatário</label>
+<div class="relative group">
+<select class="w-full appearance-none bg-surface-container-low border-none rounded-lg p-3 text-sm focus:ring-2 focus:ring-primary focus:bg-surface-container-lowest transition-all" id="recipient">
+<option value="geral">Geral (Todos os usuários)</option>
+<option selected="" value="turma">Turma específica</option>
+<option value="professores">Todos os Professores</option>
+<option value="lista">Lista Manual</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-2.5 pointer-events-none text-outline text-lg">expand_more</span>
+</div>
+</div>
+<!-- Conditional Turma Dropdown -->
+<div class="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+<label class="block text-xs font-semibold text-on-surface-variant uppercase tracking-tighter" for="class_select">Selecionar Turma</label>
+<div class="relative">
+<select class="w-full appearance-none bg-surface-container-low border-none rounded-lg p-3 text-sm focus:ring-2 focus:ring-primary focus:bg-surface-container-lowest transition-all" id="class_select">
+<option>Informática - Módulo 1 (A)</option>
+<option>Informática - Módulo 1 (B)</option>
+<option>Mecatrônica - Módulo 3</option>
+<option>Redes de Computadores - Módulo 2</option>
+<option>Design Gráfico - Módulo 1</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-2.5 pointer-events-none text-outline text-lg">groups</span>
+</div>
+<div class="flex items-center gap-2 mt-2 px-1">
+<span class="material-symbols-outlined text-[16px] text-tertiary-container">info</span>
+<p class="text-[11px] text-on-surface-variant font-medium">Esta mensagem será enviada para 32 alunos ativos.</p>
+</div>
+</div>
+<!-- Conteúdo Textarea -->
+<div class="space-y-2">
+<div class="flex justify-between items-center">
+<label class="block text-xs font-semibold text-on-surface-variant uppercase tracking-tighter" for="content">Conteúdo da Mensagem</label>
+<div class="flex gap-2">
+<button class="p-1.5 bg-surface-container-low hover:bg-surface-container-high rounded transition-colors" title="Negrito">
+<span class="material-symbols-outlined text-[18px]">format_bold</span>
+</button>
+<button class="p-1.5 bg-surface-container-low hover:bg-surface-container-high rounded transition-colors" title="Itálico">
+<span class="material-symbols-outlined text-[18px]">format_italic</span>
+</button>
+<button class="p-1.5 bg-surface-container-low hover:bg-surface-container-high rounded transition-colors" title="Lista">
+<span class="material-symbols-outlined text-[18px]">format_list_bulleted</span>
+</button>
+</div>
+</div>
+<textarea class="w-full bg-surface-container-low border-none rounded-lg p-4 text-sm focus:ring-2 focus:ring-primary focus:bg-surface-container-lowest transition-all placeholder:text-outline/50 resize-none" id="content" placeholder="Escreva aqui a sua comunicação para a turma..." rows="10"></textarea>
+</div>
+<!-- Attachments (Bonus Component for depth) -->
+<div class="p-4 bg-surface-container-low rounded-xl border-2 border-dashed border-outline-variant/30 text-center">
+<span class="material-symbols-outlined text-outline mb-2">attach_file</span>
+<p class="text-xs font-bold text-on-surface">Anexar Documentos</p>
+<p class="text-[10px] text-on-surface-variant mt-1">PDF, DOCX ou Imagens (Máx 10MB)</p>
+</div>
+</div>
+<!-- Footer -->
+<div class="p-8 border-t border-outline-variant/15 bg-surface-container-lowest/80 backdrop-blur-md">
+<div class="flex gap-4">
+<button class="flex-1 px-6 py-3.5 bg-surface-container-high text-on-surface font-bold text-sm rounded-lg hover:bg-surface-variant active:scale-95 transition-all">
+                        Cancelar
+                    </button>
+<button class="flex-[2] px-6 py-3.5 bg-gradient-to-b from-primary-container to-primary text-on-primary font-bold text-sm rounded-lg shadow-lg shadow-primary/20 active:scale-95 transition-all flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm">send</span>
+                        Enviar Mensagem
+                    </button>
+</div>
+<div class="mt-4 flex items-center justify-center gap-4 text-[11px] text-on-surface-variant font-medium">
+<label class="flex items-center gap-2 cursor-pointer">
+<input class="rounded-sm border-outline text-primary focus:ring-primary" type="checkbox"/>
+                        Enviar via E-mail
+                    </label>
+<label class="flex items-center gap-2 cursor-pointer">
+<input checked="" class="rounded-sm border-outline text-primary focus:ring-primary" type="checkbox"/>
+                        Notificação Push
+                    </label>
+</div>
+</div>
+</div>
+</main>
+<!-- Contextual FAB Suppression (Hiding based on rule) -->
+</body></html>
