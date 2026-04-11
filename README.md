@@ -150,9 +150,7 @@ ProjetoIntegradorV/
 │   └── README.md
 │
 ├── .claude/launch.json              ← Config de preview para todos os servidores
-├── GUIA_DE_TESTES.md                ← Guia completo de execução e testes
-├── FRONTEND_SPEC.md                 ← Especificação do frontend (para design)
-└── STITCH_PROMPT.md                 ← Prompt usado para gerar o design no Stitch
+└── GUIA_DE_TESTES.md                ← Guia completo de execução e testes
 ```
 
 ---
