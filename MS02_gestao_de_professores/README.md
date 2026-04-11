@@ -118,19 +118,21 @@ View que junta `grade_horaria` + `professor` + `substituicao_professor` e retorn
 ```
 MS02_gestao_de_professores/
 ├── src/
-│   ├── index.js                    ← App Fastify
+│   ├── index.ts                    ← App Fastify + error handler global (Prisma P2002/P2025)
+│   ├── types.ts                    ← JWTPayload, Role, module augmentation Fastify + @fastify/jwt
 │   ├── plugins/
-│   │   ├── prisma.js               ← PrismaClient decorator
-│   │   └── authenticate.js         ← fastify.authenticate / fastify.requireRole
+│   │   ├── prisma.ts               ← FastifyPluginAsync: PrismaClient decorator
+│   │   └── authenticate.ts         ← FastifyPluginAsync: fastify.authenticate / fastify.requireRole
 │   └── routes/
-│       ├── index.js                ← Registra professores e grade
-│       ├── professores.js          ← CRUD + /me + /count
-│       └── grade.js                ← Grade horária + substituições + eventos recentes
+│       ├── index.ts                ← Registra professores e grade
+│       ├── professores.ts          ← CRUD + /me + /count (interfaces tipadas por rota)
+│       └── grade.ts                ← Grade horária + substituições + eventos recentes
 ├── prisma/
 │   └── schema.prisma               ← Gerado via: npx prisma db pull
+├── tsconfig.json                   ← target ES2022 · module CommonJS · strict: true
 ├── .env / .env.example
 ├── package.json
-├── Dockerfile
+├── Dockerfile                      ← Multi-stage: builder (tsc) → production (dist/)
 └── README.md
 ```
 
@@ -357,9 +359,10 @@ data_inicio <= CURRENT_DATE AND (data_fim IS NULL OR data_fim >= CURRENT_DATE)
 
 ```bash
 cd MS02_gestao_de_professores
-npm run dev      # desenvolvimento (nodemon)
-npm start        # produção
-npm run db:pull  # atualiza schema.prisma do banco
+npm run dev          # desenvolvimento — tsx watch src/index.ts (hot-reload)
+npm run build        # compila TypeScript → dist/
+npm start            # produção — node dist/index.js
+npm run db:pull      # introspect schema do banco → schema.prisma
 npm run db:generate  # regenera PrismaClient
 ```
 
@@ -372,3 +375,18 @@ PORT=3002
 DATABASE_URL="mysql://20261_prjint5_noite:SENHA@edumysql.acesso.rj.senac.br:3306/20261_prjint5_gabrielsantos"
 JWT_SECRET="mesmo_secret_do_auth_service"
 ```
+
+## Dependências
+
+| Pacote | Uso |
+|---|---|
+| `fastify` ^5 | Framework HTTP |
+| `@fastify/jwt` ^9 | Verificação de JWT (emitido pelo auth-service) |
+| `@fastify/cors` ^10 | CORS para o frontend |
+| `@prisma/client` ^6 | Acesso ao banco de dados |
+| `dotenv` ^16 | Variáveis de ambiente |
+| `fastify-plugin` ^5 | Encapsulamento de plugins Fastify |
+| `typescript` *(dev)* ^5 | Compilador TypeScript |
+| `tsx` *(dev)* ^4 | Execução de `.ts` em dev com hot-reload |
+| `@types/node` *(dev)* ^22 | Tipos do Node.js |
+| `prisma` *(dev)* ^6 | CLI do Prisma |

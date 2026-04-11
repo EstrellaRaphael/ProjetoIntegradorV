@@ -66,17 +66,19 @@ O Auth Service usa `include: { aluno: true }` ao buscar um usuário para incluir
 ```
 auth-service/
 ├── src/
-│   ├── index.js              ← Fastify app, registro de plugins e rotas
+│   ├── index.ts              ← Fastify app, JWT namespaces, error handler global
+│   ├── types.ts              ← JWTPayload, Role, module augmentation (@fastify/jwt + fastify)
 │   ├── plugins/
-│   │   └── prisma.js         ← Plugin que instancia e decora o PrismaClient
+│   │   └── prisma.ts         ← FastifyPluginAsync que instancia e decora o PrismaClient
 │   └── routes/
-│       └── auth.js           ← Handlers de login, refresh, validate
+│       └── auth.ts           ← Handlers de login, refresh, validate (tipados)
 ├── prisma/
 │   └── schema.prisma         ← Modelos: usuario, aluno (introspectados + manual)
+├── tsconfig.json             ← target ES2022 · module CommonJS · strict: true
 ├── .env                      ← Variáveis de ambiente (não versionar)
 ├── .env.example              ← Template de variáveis
 ├── package.json
-├── Dockerfile
+├── Dockerfile                ← Multi-stage: builder (tsc) → production (dist/)
 └── README.md
 ```
 
@@ -206,7 +208,9 @@ Cada microserviço extrai esses dados de `request.user` após a verificação JW
 
 As senhas são armazenadas com **bcrypt, custo 10**, conforme exigido pelo RNF-02. Nunca são armazenadas em texto puro.
 
-```javascript
+```typescript
+import bcrypt from 'bcryptjs'
+
 // Hash ao criar usuário
 const hash = await bcrypt.hash(senha, 10)
 
@@ -224,9 +228,20 @@ const valida = await bcrypt.compare(senhaFornecida, usuario.senha_hash)
 Os dois tokens são JWTs assinados com **segredos diferentes** (`JWT_SECRET` e `JWT_REFRESH_SECRET`). Isso impede que um refresh token seja usado onde se espera um access token e vice-versa.
 
 A implementação no Fastify usa dois namespaces separados do plugin `@fastify/jwt`:
-```javascript
-fastify.register(require('@fastify/jwt'), { secret: process.env.JWT_SECRET, namespace: 'jwt' })
-fastify.register(require('@fastify/jwt'), { secret: process.env.JWT_REFRESH_SECRET, namespace: 'refreshJwt' })
+```typescript
+import jwt from '@fastify/jwt'
+
+fastify.register(jwt, { secret: process.env.JWT_SECRET as string, namespace: 'jwt' })
+fastify.register(jwt, { secret: process.env.JWT_REFRESH_SECRET as string, namespace: 'refreshJwt' })
+```
+
+O tipo `JWT` de `@fastify/jwt` é declarado no `src/types.ts` via module augmentation:
+```typescript
+declare module 'fastify' {
+  interface FastifyInstance {
+    refreshJwt: JWT   // namespace de refresh
+  }
+}
 ```
 
 ---
@@ -252,17 +267,19 @@ Saída esperada:
 {"level":30,"msg":"Server listening at http://0.0.0.0:3000"}
 ```
 
-### Produção
+### Produção (compilar e rodar)
 
 ```bash
-npm start
+npm run build   # tsc → compila src/ para dist/
+npm start       # node dist/index.js
 ```
 
-### Docker
+### Docker (multi-stage build)
 
 ```bash
 docker build -t auth-service .
 docker run -p 3000:3000 --env-file .env auth-service
+# O Dockerfile compila automaticamente via tsc no estágio builder
 ```
 
 ---
@@ -278,5 +295,8 @@ docker run -p 3000:3000 --env-file .env auth-service
 | `bcryptjs` | ^2.4.3 | Hash e verificação de senhas |
 | `dotenv` | ^16.0.0 | Carregamento de variáveis de ambiente |
 | `fastify-plugin` | ^5.0.0 | Encapsulamento correto de plugins Fastify |
+| `typescript` *(dev)* | ^5.0.0 | Compilador TypeScript |
+| `tsx` *(dev)* | ^4.0.0 | Execução de `.ts` em desenvolvimento (substitui nodemon) |
+| `@types/node` *(dev)* | ^22.0.0 | Tipos do Node.js |
+| `@types/bcryptjs` *(dev)* | ^2.4.6 | Tipos do bcryptjs |
 | `prisma` *(dev)* | ^6.0.0 | CLI para `db pull` e `generate` |
-| `nodemon` *(dev)* | ^3.0.0 | Reload automático em desenvolvimento |

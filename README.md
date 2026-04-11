@@ -75,12 +75,13 @@ A autenticação é centralizada em um **Auth Service** compartilhado que emite 
 | Camada | Tecnologia |
 |---|---|
 | Runtime | Node.js v22 |
+| Linguagem | **TypeScript v5** (strict mode · CommonJS · target ES2022) |
 | Framework HTTP | Fastify v5 |
 | ORM | Prisma v6 |
 | Banco de dados | MySQL 8 (MariaDB) |
 | Autenticação | JWT (access 15min + refresh 7d) · bcryptjs |
 | Frontend | React + Vite · TanStack Query · React Router v7 · Tailwind CSS · Zustand |
-| Containerização | Docker · Docker Compose |
+| Containerização | Docker (multi-stage build) · Docker Compose |
 
 ---
 
@@ -96,12 +97,14 @@ ProjetoIntegradorV/
 │
 ├── auth-service/                    ← Auth compartilhado (porta 3000)
 │   ├── src/
-│   │   ├── index.js
+│   │   ├── index.ts                 ← App Fastify + error handler global
+│   │   ├── types.ts                 ← JWTPayload, Role, module augmentation
 │   │   ├── plugins/
-│   │   │   └── prisma.js
+│   │   │   └── prisma.ts
 │   │   └── routes/
-│   │       └── auth.js
+│   │       └── auth.ts
 │   ├── prisma/schema.prisma
+│   ├── tsconfig.json
 │   ├── .env / .env.example
 │   ├── package.json
 │   ├── Dockerfile
@@ -109,15 +112,20 @@ ProjetoIntegradorV/
 │
 ├── MS01_gestao_de_alunos/           ← porta 3001
 │   ├── src/
-│   │   ├── index.js
+│   │   ├── index.ts
+│   │   ├── types.ts
+│   │   ├── constants.ts             ← FREQUENCIA_MINIMA_PERCENTUAL = 75
 │   │   ├── plugins/
-│   │   │   ├── prisma.js
-│   │   │   └── authenticate.js
+│   │   │   ├── prisma.ts
+│   │   │   └── authenticate.ts
+│   │   ├── services/
+│   │   │   └── frequencia.service.ts ← recalcularFrequencia (service layer)
 │   │   └── routes/
-│   │       ├── alunos.js
-│   │       ├── frequencias.js
-│   │       └── historico.js
+│   │       ├── alunos.ts
+│   │       ├── frequencias.ts
+│   │       └── historico.ts
 │   ├── prisma/schema.prisma
+│   ├── tsconfig.json
 │   ├── .env / .env.example
 │   ├── package.json
 │   ├── Dockerfile
@@ -125,7 +133,7 @@ ProjetoIntegradorV/
 │
 ├── MS02_gestao_de_professores/      ← porta 3002
 ├── MS03_turmas_e_disciplinas/       ← porta 3003
-├── MS04_avaliacoes_e_notas/         ← porta 3004
+├── MS04_avaliacoes_e_notas/         ← porta 3004 (tem services/nota.service.ts)
 ├── MS05_comunicacao_escolar/        ← porta 3005 (aguardando schema)
 └── frontend/                        ← React SPA (porta 5173)
 ```
@@ -195,6 +203,14 @@ cd ../frontend && npm install
 ```bash
 cd MS01_gestao_de_alunos && npm run db:generate
 # repetir para cada MS
+```
+
+### 4. Compilar para produção (opcional em dev)
+
+```bash
+# Cada serviço possui script de build TypeScript
+cd auth-service && npm run build   # tsc → dist/
+# O Docker faz isso automaticamente via multi-stage build
 ```
 
 ---
@@ -449,11 +465,24 @@ Cada serviço possui um `.env` (ignorado pelo git) e um `.env.example` como refe
 |---|---|---|
 | RNF-02 | Senhas com bcrypt (custo 10) | Implementado no auth-service |
 | RNF-04 | JWT com access 15min + refresh 7d | Implementado |
-| RNF-10 | Deploy independente por serviço | Dockerfile por serviço |
+| RNF-10 | Deploy independente por serviço | Dockerfile multi-stage por serviço |
 | RNF-12 | Serviços stateless (sessão via JWT) | Implementado |
-| RNF-14 | Erros em português sem detalhes técnicos | Implementado nas rotas |
+| RNF-14 | Erros em português sem detalhes técnicos | Handler global (P2002 → 409, P2025 → 404) + rotas |
 | RNF-16 | Cálculos de nota auditáveis | Campos lancada_em / editada_em / valores de entrada gravados |
-| RNF-17 | Containerizável com Docker | Dockerfile + docker-compose.yml |
+| RNF-17 | Containerizável com Docker | Dockerfile multi-stage + docker-compose.yml |
+
+## Qualidade de Código
+
+O projeto adota **TypeScript strict** em todos os serviços e segue os princípios abaixo:
+
+| Prática | Onde |
+|---|---|
+| **Clean Architecture** — camada de serviço isolada | `services/frequencia.service.ts` (MS-01), `services/nota.service.ts` (MS-04) |
+| **SRP / SOLID** — uma responsabilidade por arquivo | Plugins, services e routes com escopo único |
+| **Sem magic numbers** — constantes nomeadas | `constants.ts` em MS-01 e MS-04 |
+| **Error handling centralizado** | `setErrorHandler` em cada `index.ts` |
+| **Query eficiente** | MS-04: filtro de notas via `where` Prisma (não em memória) |
+| **Type safety** | Interfaces `Params`, `Querystring`, `Body` por rota; enums Prisma tipados |
 
 ---
 

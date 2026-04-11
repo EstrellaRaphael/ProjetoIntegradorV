@@ -109,20 +109,22 @@ Junta `turma` + `alocacao_professor` + `disciplina`, retornando para cada turma 
 ```
 MS03_turmas_e_disciplinas/
 ├── src/
-│   ├── index.js                    ← App Fastify
+│   ├── index.ts                    ← App Fastify + error handler global (Prisma P2002/P2025)
+│   ├── types.ts                    ← JWTPayload, Role, module augmentation Fastify + @fastify/jwt
 │   ├── plugins/
-│   │   ├── prisma.js
-│   │   └── authenticate.js
+│   │   ├── prisma.ts               ← FastifyPluginAsync: PrismaClient decorator
+│   │   └── authenticate.ts         ← FastifyPluginAsync: authenticate / requireRole
 │   └── routes/
-│       ├── index.js                ← Registra turmas, disciplinas, calendario
-│       ├── turmas.js               ← CRUD turmas + alocações de alunos
-│       ├── disciplinas.js          ← CRUD disciplinas
-│       └── calendario.js           ← CRUD eventos do calendário
+│       ├── index.ts                ← Registra turmas, disciplinas, calendario
+│       ├── turmas.ts               ← CRUD turmas + alocações de alunos (interfaces tipadas)
+│       ├── disciplinas.ts          ← CRUD disciplinas
+│       └── calendario.ts           ← CRUD eventos do calendário
 ├── prisma/
 │   └── schema.prisma               ← Gerado via: npx prisma db pull
+├── tsconfig.json                   ← target ES2022 · module CommonJS · strict: true
 ├── .env / .env.example
 ├── package.json
-├── Dockerfile
+├── Dockerfile                      ← Multi-stage: builder (tsc) → production (dist/)
 └── README.md
 ```
 
@@ -366,7 +368,9 @@ Quando um evento acadêmico é criado (prova, trabalho), o MS-05 deve ser notifi
 
 ```bash
 cd MS03_turmas_e_disciplinas
-npm run dev
+npm run dev          # tsx watch src/index.ts (hot-reload)
+npm run build        # tsc → dist/
+npm start            # node dist/index.js
 ```
 
 **Teste rápido:**
@@ -384,3 +388,18 @@ PORT=3003
 DATABASE_URL="mysql://20261_prjint5_noite:SENHA@edumysql.acesso.rj.senac.br:3306/20261_prjint5_andrebezerra"
 JWT_SECRET="mesmo_secret_do_auth_service"
 ```
+
+## Dependências
+
+| Pacote | Uso |
+|---|---|
+| `fastify` ^5 | Framework HTTP |
+| `@fastify/jwt` ^9 | Verificação de JWT (emitido pelo auth-service) |
+| `@fastify/cors` ^10 | CORS para o frontend |
+| `@prisma/client` ^6 | Acesso ao banco de dados |
+| `dotenv` ^16 | Variáveis de ambiente |
+| `fastify-plugin` ^5 | Encapsulamento de plugins Fastify |
+| `typescript` *(dev)* ^5 | Compilador TypeScript |
+| `tsx` *(dev)* ^4 | Execução de `.ts` em dev com hot-reload |
+| `@types/node` *(dev)* ^22 | Tipos do Node.js |
+| `prisma` *(dev)* ^6 | CLI do Prisma |

@@ -114,19 +114,24 @@ Junta `media_bimestral` + `prova_final`, exibindo para cada aluno × disciplina 
 ```
 MS04_avaliacoes_e_notas/
 ├── src/
-│   ├── index.js
+│   ├── index.ts                    ← App Fastify + error handler global (Prisma P2002/P2025)
+│   ├── types.ts                    ← JWTPayload, Role, module augmentation Fastify + @fastify/jwt
+│   ├── constants.ts                ← MEDIA_MINIMA_APROVACAO_PADRAO = 6.0
 │   ├── plugins/
-│   │   ├── prisma.js
-│   │   └── authenticate.js
+│   │   ├── prisma.ts               ← FastifyPluginAsync: PrismaClient decorator
+│   │   └── authenticate.ts         ← FastifyPluginAsync: authenticate / requireRole
+│   ├── services/
+│   │   └── nota.service.ts         ← recalcularMedia() — lógica de negócio isolada (Clean Architecture)
 │   └── routes/
-│       ├── index.js                ← Registra assessments e grades
-│       ├── avaliacoes.js           ← CRUD avaliações
-│       └── notas.js                ← Lançamento de notas, boletim, PF, config
+│       ├── index.ts                ← Registra assessments e grades
+│       ├── avaliacoes.ts           ← CRUD avaliações (interfaces tipadas)
+│       └── notas.ts                ← Lançamento de notas, boletim, PF, config (delega ao service)
 ├── prisma/
 │   └── schema.prisma               ← Gerado via: npx prisma db pull
+├── tsconfig.json                   ← target ES2022 · module CommonJS · strict: true
 ├── .env / .env.example
 ├── package.json
-├── Dockerfile
+├── Dockerfile                      ← Multi-stage: builder (tsc) → production (dist/)
 └── README.md
 ```
 
@@ -203,10 +208,11 @@ Lança a nota de um aluno em uma avaliação.
 }
 ```
 
-**Efeito colateral — Recálculo automático da Média Bimestral:**
-1. Busca todas as notas não substituídas do aluno para aquela disciplina × bimestre × ano letivo (excluindo notas de Recuperação)
-2. Calcula a média aritmética
-3. Atualiza ou cria o registro em `media_bimestral`
+**Efeito colateral — Recálculo automático da Média Bimestral** (delegado ao `nota.service.ts`):
+1. Busca notas não substituídas via filtro Prisma (`where.avaliacao`) — query eficiente, sem filtragem em memória
+2. Exclui avaliações do tipo `RECUPERACAO` diretamente no `where`
+3. Calcula a média aritmética
+4. Atualiza ou cria o registro em `media_bimestral`
 
 ---
 
@@ -377,7 +383,9 @@ O professor só pode lançar notas em avaliações onde ele é o `professor_id`.
 
 ```bash
 cd MS04_avaliacoes_e_notas
-npm run dev
+npm run dev          # tsx watch src/index.ts (hot-reload)
+npm run build        # tsc → dist/
+npm start            # node dist/index.js
 ```
 
 **Teste rápido:**
@@ -395,3 +403,18 @@ PORT=3004
 DATABASE_URL="mysql://20261_prjint5_noite:SENHA@edumysql.acesso.rj.senac.br:3306/20261_prjint5_carlossoares"
 JWT_SECRET="mesmo_secret_do_auth_service"
 ```
+
+## Dependências
+
+| Pacote | Uso |
+|---|---|
+| `fastify` ^5 | Framework HTTP |
+| `@fastify/jwt` ^9 | Verificação de JWT (emitido pelo auth-service) |
+| `@fastify/cors` ^10 | CORS para o frontend |
+| `@prisma/client` ^6 | Acesso ao banco de dados |
+| `dotenv` ^16 | Variáveis de ambiente |
+| `fastify-plugin` ^5 | Encapsulamento de plugins Fastify |
+| `typescript` *(dev)* ^5 | Compilador TypeScript |
+| `tsx` *(dev)* ^4 | Execução de `.ts` em dev com hot-reload |
+| `@types/node` *(dev)* ^22 | Tipos do Node.js |
+| `prisma` *(dev)* ^6 | CLI do Prisma |

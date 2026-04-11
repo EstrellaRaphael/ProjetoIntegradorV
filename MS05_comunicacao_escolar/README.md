@@ -70,18 +70,20 @@ O schema foi introspectado via `prisma db pull` e contém as seguintes tabelas:
 ```
 MS05_comunicacao_escolar/
 ├── src/
-│   ├── index.js                    ← App Fastify (em desenvolvimento)
+│   ├── index.ts                    ← App Fastify + error handler global
+│   ├── types.ts                    ← JWTPayload, Role, module augmentation Fastify + @fastify/jwt
 │   ├── plugins/
-│   │   ├── prisma.js
-│   │   └── authenticate.js
+│   │   ├── prisma.ts               ← FastifyPluginAsync: PrismaClient decorator
+│   │   └── authenticate.ts         ← FastifyPluginAsync: authenticate / requireRole
 │   └── routes/
-│       ├── index.js
-│       └── comunicados.js          ← Stub — aguardando schema definitivo
+│       ├── index.ts
+│       └── comunicados.ts          ← Stub — aguardando schema definitivo (Otávio)
 ├── prisma/
 │   └── schema.prisma               ← Gerado via: npx prisma db pull
+├── tsconfig.json                   ← target ES2022 · module CommonJS · strict: true
 ├── .env / .env.example
 ├── package.json
-├── Dockerfile
+├── Dockerfile                      ← Multi-stage: builder (tsc) → production (dist/)
 └── README.md
 ```
 
@@ -155,7 +157,9 @@ Os endpoints abaixo são planejados com base nos requisitos funcionais. A implem
 
 ```bash
 cd MS05_comunicacao_escolar
-npm run dev
+npm run dev      # tsx watch src/index.ts (hot-reload)
+npm run build    # tsc → dist/
+npm start        # node dist/index.js
 ```
 
 O serviço sobe na porta 3005 com apenas o endpoint `/health` e uma rota stub em `/v1/communications`.
@@ -171,3 +175,18 @@ JWT_SECRET="mesmo_secret_do_auth_service"
 MS01_URL="http://localhost:3001"
 MS03_URL="http://localhost:3003"
 ```
+
+## Dependências
+
+| Pacote | Uso |
+|---|---|
+| `fastify` ^5 | Framework HTTP |
+| `@fastify/jwt` ^9 | Verificação de JWT (emitido pelo auth-service) |
+| `@fastify/cors` ^10 | CORS para o frontend |
+| `@prisma/client` ^6 | Acesso ao banco de dados |
+| `dotenv` ^16 | Variáveis de ambiente |
+| `fastify-plugin` ^5 | Encapsulamento de plugins Fastify |
+| `typescript` *(dev)* ^5 | Compilador TypeScript |
+| `tsx` *(dev)* ^4 | Execução de `.ts` em dev com hot-reload |
+| `@types/node` *(dev)* ^22 | Tipos do Node.js |
+| `prisma` *(dev)* ^6 | CLI do Prisma |

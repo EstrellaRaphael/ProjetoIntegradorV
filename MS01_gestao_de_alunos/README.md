@@ -130,21 +130,26 @@ View de leitura que junta `aluno` + `frequencia_consolidada` com o campo calcula
 ```
 MS01_gestao_de_alunos/
 ├── src/
-│   ├── index.js                    ← App Fastify: CORS, JWT, plugins, rotas
+│   ├── index.ts                    ← App Fastify: CORS, JWT, plugins, rotas, error handler global
+│   ├── types.ts                    ← JWTPayload, Role, module augmentation Fastify + @fastify/jwt
+│   ├── constants.ts                ← FREQUENCIA_MINIMA_PERCENTUAL = 75
 │   ├── plugins/
-│   │   ├── prisma.js               ← Instancia PrismaClient, decora fastify.prisma
-│   │   └── authenticate.js         ← Decorators: fastify.authenticate, fastify.requireRole
+│   │   ├── prisma.ts               ← FastifyPluginAsync: instancia PrismaClient, decora fastify.prisma
+│   │   └── authenticate.ts         ← FastifyPluginAsync: fastify.authenticate / fastify.requireRole
+│   ├── services/
+│   │   └── frequencia.service.ts   ← recalcularFrequencia() — lógica de negócio isolada (Clean Architecture)
 │   └── routes/
-│       ├── index.js                ← Registra alunos, frequencias, historico
-│       ├── alunos.js               ← CRUD de alunos + /me + /count
-│       ├── frequencias.js          ← GET/POST frequência + override
-│       └── historico.js            ← GET histórico escolar
+│       ├── index.ts                ← Registra alunos, frequencias, historico
+│       ├── alunos.ts               ← CRUD de alunos + /me + /count (interfaces tipadas por rota)
+│       ├── frequencias.ts          ← GET/POST frequência + override (delega ao service)
+│       └── historico.ts            ← GET histórico escolar
 ├── prisma/
 │   └── schema.prisma               ← Gerado via: npx prisma db pull
+├── tsconfig.json                   ← target ES2022 · module CommonJS · strict: true
 ├── .env                            ← Variáveis locais (não versionar)
 ├── .env.example                    ← Template
 ├── package.json
-├── Dockerfile
+├── Dockerfile                      ← Multi-stage: builder (tsc) → production (dist/)
 └── README.md
 ```
 
@@ -152,24 +157,34 @@ MS01_gestao_de_alunos/
 
 ## Plugins do Fastify
 
-### `plugins/prisma.js`
+### `plugins/prisma.ts`
 
-Cria o `PrismaClient`, conecta ao banco e decora a instância Fastify com `fastify.prisma`. Ao fechar o servidor, desconecta automaticamente via hook `onClose`.
+Cria o `PrismaClient`, conecta ao banco e decora a instância Fastify com `fastify.prisma`. Ao fechar o servidor, desconecta automaticamente via hook `onClose`. Registrado com `fastify-plugin` para que o decorator fique visível em todos os escopos.
 
-```javascript
-fastify.decorate('prisma', prisma)
+```typescript
+import fp from 'fastify-plugin'
+import { FastifyPluginAsync } from 'fastify'
+import { PrismaClient } from '@prisma/client'
+
+const prismaPlugin: FastifyPluginAsync = async (fastify) => {
+  const prisma = new PrismaClient()
+  await prisma.$connect()
+  fastify.decorate('prisma', prisma)
+  fastify.addHook('onClose', async () => { await prisma.$disconnect() })
+}
+export default fp(prismaPlugin)
 ```
 
-### `plugins/authenticate.js`
+### `plugins/authenticate.ts`
 
 Expõe dois decorators usados como `preHandler` nas rotas:
 
-- **`fastify.authenticate`** — verifica o JWT e injeta `request.user`. Retorna 401 se inválido.
+- **`fastify.authenticate`** — verifica o JWT e injeta `request.user` (tipado como `JWTPayload`). Retorna 401 se inválido.
 - **`fastify.requireRole(roles[])`** — verifica o JWT e valida se `request.user.role` está na lista. Retorna 403 se não autorizado.
 
 Exemplo de uso:
-```javascript
-fastify.get('/students', {
+```typescript
+fastify.get<{ Querystring: AlunoQuery }>('/students', {
   preHandler: fastify.requireRole(['ADMIN'])
 }, handler)
 
@@ -177,6 +192,21 @@ fastify.get('/students/me', {
   preHandler: fastify.authenticate  // qualquer role autenticada
 }, handler)
 ```
+
+### `services/frequencia.service.ts`
+
+Isola a lógica de negócio de frequência fora das rotas (**Clean Architecture / SRP**):
+
+```typescript
+export async function recalcularFrequencia(
+  prisma: PrismaClient,
+  alunoId: string,
+  disciplinaId: string,
+  bimestre: number
+): Promise<void>
+```
+
+Utiliza `FREQUENCIA_MINIMA_PERCENTUAL` de `constants.ts` em vez do magic number `75`.
 
 ---
 
@@ -331,10 +361,10 @@ Lança presença ou falta de uma aula. Recalcula automaticamente a `frequencia_c
 }
 ```
 
-**Lógica de recálculo:**
+**Lógica de recálculo** (delegada ao `frequencia.service.ts`):
 1. Busca todos os `registro_frequencia` do aluno × disciplina × bimestre
 2. Calcula `percentual = (presencas / total) * 100`
-3. Define `reprovado_por_falta = percentual < 75`
+3. Define `reprovado_por_falta = percentual < FREQUENCIA_MINIMA_PERCENTUAL` (constante = 75)
 4. Atualiza ou cria registro em `frequencia_consolidada`
 
 ---
@@ -477,5 +507,7 @@ JWT_SECRET="mesmo_secret_configurado_no_auth_service"
 | `@prisma/client` ^6 | Acesso ao banco de dados |
 | `dotenv` ^16 | Variáveis de ambiente |
 | `fastify-plugin` ^5 | Encapsulamento de plugins Fastify |
-| `nodemon` *(dev)* | Reload automático em desenvolvimento |
-| `prisma` *(dev)* | CLI do Prisma |
+| `typescript` *(dev)* ^5 | Compilador TypeScript |
+| `tsx` *(dev)* ^4 | Execução de `.ts` em dev com hot-reload (`tsx watch`) |
+| `@types/node` *(dev)* ^22 | Tipos do Node.js |
+| `prisma` *(dev)* ^6 | CLI do Prisma |
