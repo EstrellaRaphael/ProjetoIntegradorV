@@ -2,10 +2,11 @@
   "name": "ms03-turmas-e-disciplinas",
   "version": "1.0.0",
   "description": "MS-03 Turmas e Disciplinas — turmas, alocações, calendário escolar",
-  "main": "src/index.js",
+  "main": "dist/index.js",
   "scripts": {
-    "dev": "nodemon src/index.js",
-    "start": "node src/index.js",
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
     "db:pull": "prisma db pull",
     "db:generate": "prisma generate"
   },
@@ -18,7 +19,9 @@
     "fastify-plugin": "^5.0.0"
   },
   "devDependencies": {
-    "nodemon": "^3.0.0",
-    "prisma": "^6.0.0"
+    "@types/node": "^22.0.0",
+    "prisma": "^6.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0"
   }
 }
