@@ -1,0 +1,145 @@
+# =============================================================
+#  Sistema de Gestão Escolar — Projeto Integrador V
+#  .gitignore raiz (cobre todos os microserviços e o frontend)
+# =============================================================
+
+
+# -------------------------------------------------------------
+# Ferramentas de desenvolvimento local
+# -------------------------------------------------------------
+.claude/
+
+
+# -------------------------------------------------------------
+# Credenciais e variáveis de ambiente — NUNCA versionar
+# -------------------------------------------------------------
+.env
+.env.local
+.env.*.local
+database.txt
+
+
+# -------------------------------------------------------------
+# Dependências Node.js
+# -------------------------------------------------------------
+node_modules/
+.npm
+.yarn/
+yarn-error.log
+package-lock.json
+
+
+# -------------------------------------------------------------
+# Prisma — arquivos gerados (recriáveis via prisma generate)
+# -------------------------------------------------------------
+**/prisma/generated/
+# OBS: schema.prisma é versionado (gerado via db pull, ajustado manualmente)
+
+
+# -------------------------------------------------------------
+# Logs
+# -------------------------------------------------------------
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+
+# -------------------------------------------------------------
+# Build / dist
+# -------------------------------------------------------------
+dist/
+build/
+out/
+.output/
+
+
+# -------------------------------------------------------------
+# Frontend (Vite / React)
+# -------------------------------------------------------------
+frontend/dist/
+frontend/.vite/
+frontend/coverage/
+
+
+# -------------------------------------------------------------
+# Docker
+# -------------------------------------------------------------
+.docker/
+
+
+# -------------------------------------------------------------
+# Testes e cobertura
+# -------------------------------------------------------------
+coverage/
+.nyc_output/
+*.lcov
+
+
+# -------------------------------------------------------------
+# Cache de ferramentas
+# -------------------------------------------------------------
+.cache/
+.parcel-cache/
+.eslintcache
+.stylelintcache
+.turbo/
+
+
+# -------------------------------------------------------------
+# Sistema operacional
+# -------------------------------------------------------------
+
+# Windows
+Thumbs.db
+Thumbs.db:encdata
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# Linux
+*~
+
+
+# -------------------------------------------------------------
+# IDEs e editores
+# -------------------------------------------------------------
+
+# VS Code
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# JetBrains (IntelliJ, WebStorm, etc.)
+.idea/
+*.iml
+*.iws
+
+# Vim / Neovim
+*.swp
+*.swo
+Session.vim
+
+# Emacs
+\#*\#
+.\#*
+
+
+# -------------------------------------------------------------
+# Arquivos temporários
+# -------------------------------------------------------------
+tmp/
+temp/
+*.tmp
+*.bak
+*.orig

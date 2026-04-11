@@ -1,0 +1,45 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model comunicado {
+  id                      String                    @id @db.Char(36)
+  remetente_id            String                    @db.Char(36)
+  titulo                  String                    @db.VarChar(255)
+  conteudo                String                    @db.Text
+  publico_alvo            String                    @db.VarChar(50)
+  data_envio              DateTime                  @default(now()) @db.Timestamp(0)
+  destinatario_comunicado destinatario_comunicado[]
+}
+
+model destinatario_comunicado {
+  id            String     @id @db.Char(36)
+  comunicado_id String     @db.Char(36)
+  usuario_id    String     @db.Char(36)
+  lido          Boolean    @default(false)
+  data_leitura  DateTime   @default(now()) @db.Timestamp(0)
+  comunicado    comunicado @relation(fields: [comunicado_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_comunicado")
+
+  @@index([comunicado_id], map: "fk_comunicado")
+}
+
+model notificacao_externa {
+  id           String   @id @db.Char(36)
+  usuario_id   String   @db.Char(36)
+  mensagem     String   @db.Text
+  canal        String   @db.VarChar(20)
+  status       String   @db.VarChar(20)
+  tentativas   Int      @default(0)
+  data_criacao DateTime @default(now()) @db.Timestamp(0)
+}
+
+model preferencia_usuario {
+  usuario_id        String  @id @db.Char(36)
+  email_obrigatorio Boolean @default(true)
+  whatsapp_opcional Boolean @default(false)
+}

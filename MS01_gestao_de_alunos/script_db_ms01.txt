@@ -1,0 +1,131 @@
+CREATE TABLE aluno (
+    id CHAR(36) NOT NULL,
+    matricula VARCHAR(30) NOT NULL,
+    nome_completo VARCHAR(255) NOT NULL,
+    data_nascimento DATE NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    cpf VARCHAR(14) NOT NULL,
+    telefone VARCHAR(20),
+    end_logradouro VARCHAR(255) NOT NULL,
+    end_numero VARCHAR(20) NOT NULL,
+    end_complemento VARCHAR(100),
+    end_bairro VARCHAR(100) NOT NULL,
+    end_cidade VARCHAR(100) NOT NULL,
+    end_estado CHAR(2) NOT NULL,
+    end_cep VARCHAR(9) NOT NULL,
+    turma_atual_id CHAR(36),
+    status ENUM('ATIVO','INATIVO','TRANSFERIDO') NOT NULL DEFAULT 'ATIVO',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_aluno_matricula (matricula),
+    UNIQUE KEY uq_aluno_email (email),
+    UNIQUE KEY uq_aluno_cpf (cpf)
+);
+
+CREATE TABLE registro_frequencia (
+    id CHAR(36) NOT NULL,
+    aluno_id CHAR(36) NOT NULL,
+    disciplina_id CHAR(36) NOT NULL,
+    turma_id CHAR(36) NOT NULL,
+    data DATE NOT NULL,
+    presente BOOLEAN NOT NULL,
+    bimestre SMALLINT NOT NULL,
+    professor_id CHAR(36) NOT NULL,
+    observacao TEXT,
+    PRIMARY KEY (id),
+    CONSTRAINT fk_rf_aluno FOREIGN KEY (aluno_id)
+        REFERENCES aluno (id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_rf_aluno_id ON registro_frequencia (aluno_id);
+CREATE INDEX idx_rf_disciplina_id ON registro_frequencia (disciplina_id);
+CREATE INDEX idx_rf_data ON registro_frequencia (data);
+CREATE INDEX idx_rf_bimestre ON registro_frequencia (bimestre);
+
+CREATE TABLE frequencia_consolidada (
+    id CHAR(36) NOT NULL,
+    aluno_id CHAR(36) NOT NULL,
+    disciplina_id CHAR(36) NOT NULL,
+    bimestre SMALLINT NOT NULL,
+    total_aulas INT NOT NULL,
+    total_presencas INT NOT NULL,
+    percentual DECIMAL(5,2) NOT NULL,
+    reprovado_por_falta BOOLEAN NOT NULL DEFAULT FALSE,
+    PRIMARY KEY (id),
+    CONSTRAINT fk_fc_aluno FOREIGN KEY (aluno_id)
+        REFERENCES aluno (id) ON DELETE CASCADE,
+    UNIQUE KEY uq_fc_aluno_disciplina_bimestre (aluno_id, disciplina_id, bimestre)
+);
+
+CREATE INDEX idx_fc_aluno_id ON frequencia_consolidada (aluno_id);
+CREATE INDEX idx_fc_disciplina_id ON frequencia_consolidada (disciplina_id);
+
+CREATE TABLE override_frequencia (
+    id CHAR(36) NOT NULL,
+    aluno_id CHAR(36) NOT NULL,
+    disciplina_id CHAR(36) NOT NULL,
+    admin_id CHAR(36) NOT NULL,
+    justificativa TEXT NOT NULL,
+    data_decisao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status_anterior BOOLEAN NOT NULL,
+    PRIMARY KEY (id),
+    CONSTRAINT fk_of_aluno FOREIGN KEY (aluno_id)
+        REFERENCES aluno (id) ON DELETE RESTRICT
+);
+
+CREATE INDEX idx_of_aluno_id ON override_frequencia (aluno_id);
+CREATE INDEX idx_of_disciplina_id ON override_frequencia (disciplina_id);
+
+CREATE TABLE historico_escolar (
+    id CHAR(36) NOT NULL,
+    aluno_id CHAR(36) NOT NULL,
+    ano_letivo SMALLINT NOT NULL,
+    turma_id CHAR(36) NOT NULL,
+    turma_descricao VARCHAR(100) NOT NULL,
+    situacao ENUM('APROVADO','REPROVADO_NOTA','REPROVADO_FALTA') NOT NULL,
+    bloqueado_edicao BOOLEAN NOT NULL DEFAULT FALSE,
+    PRIMARY KEY (id),
+    CONSTRAINT fk_he_aluno FOREIGN KEY (aluno_id)
+        REFERENCES aluno (id) ON DELETE RESTRICT,
+    UNIQUE KEY uq_he_aluno_ano (aluno_id, ano_letivo)
+);
+
+CREATE INDEX idx_he_aluno_id ON historico_escolar (aluno_id);
+CREATE INDEX idx_he_ano_letivo ON historico_escolar (ano_letivo);
+
+CREATE TABLE resultado_disciplina (
+    id CHAR(36) NOT NULL,
+    historico_escolar_id CHAR(36) NOT NULL,
+    disciplina_id CHAR(36) NOT NULL,
+    disciplina_nome VARCHAR(150) NOT NULL,
+    media_anual DECIMAL(4,2),
+    frequencia_percentual DECIMAL(5,2),
+    status_final ENUM('APROVADO','APROVADO_PF','REPROVADO_NOTA','REPROVADO_FALTA') NOT NULL,
+    fonte VARCHAR(50) NOT NULL DEFAULT 'MS-4',
+    PRIMARY KEY (id),
+    CONSTRAINT fk_rd_historico FOREIGN KEY (historico_escolar_id)
+        REFERENCES historico_escolar (id) ON DELETE CASCADE,
+    UNIQUE KEY uq_rd_historico_disciplina (historico_escolar_id, disciplina_id)
+);
+
+CREATE INDEX idx_rd_historico_id ON resultado_disciplina (historico_escolar_id);
+CREATE INDEX idx_rd_disciplina_id ON resultado_disciplina (disciplina_id);
+
+CREATE VIEW vw_frequencia_aluno AS
+SELECT
+    a.id AS aluno_id,
+    a.matricula,
+    a.nome_completo,
+    fc.disciplina_id,
+    fc.bimestre,
+    fc.total_aulas,
+    fc.total_presencas,
+    fc.percentual,
+    fc.reprovado_por_falta,
+    CASE
+        WHEN fc.percentual >= 75 THEN FALSE
+        ELSE TRUE
+    END AS abaixo_minimo
+FROM aluno a
+JOIN frequencia_consolidada fc ON fc.aluno_id = a.id;

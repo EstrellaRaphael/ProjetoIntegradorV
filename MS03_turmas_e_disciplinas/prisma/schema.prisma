@@ -1,0 +1,88 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model alocacao_aluno {
+  id             String   @id @db.Char(36)
+  aluno_id       String   @db.Char(36)
+  turma_id       String   @db.Char(36)
+  data_matricula DateTime @db.Date
+  turma          turma    @relation(fields: [turma_id], references: [id], onUpdate: Restrict, map: "fk_aloc_aluno_turma")
+
+  @@unique([aluno_id, turma_id], map: "uq_alocacao_aluno")
+  @@index([aluno_id], map: "idx_aloc_aluno_id")
+  @@index([turma_id], map: "idx_aloc_aluno_turma")
+}
+
+model alocacao_professor {
+  id              String     @id @db.Char(36)
+  professor_id    String     @db.Char(36)
+  disciplina_id   String     @db.Char(36)
+  turma_id        String     @db.Char(36)
+  data_vinculacao DateTime   @db.Date
+  disciplina      disciplina @relation(fields: [disciplina_id], references: [id], onUpdate: Restrict, map: "fk_aloc_prof_disciplina")
+  turma           turma      @relation(fields: [turma_id], references: [id], onUpdate: Restrict, map: "fk_aloc_prof_turma")
+
+  @@unique([professor_id, disciplina_id, turma_id], map: "uq_alocacao_professor")
+  @@index([disciplina_id], map: "idx_aloc_prof_disc")
+  @@index([professor_id], map: "idx_aloc_prof_id")
+  @@index([turma_id], map: "idx_aloc_prof_turma")
+}
+
+model calendario_escolar {
+  id        String                  @id @db.Char(36)
+  data      DateTime                @db.Date
+  descricao String                  @db.VarChar(255)
+  tipo      calendario_escolar_tipo @default(AULA)
+  turma     turma[]
+
+  @@unique([data, tipo], map: "uq_calendario_data_tipo")
+  @@index([data], map: "idx_cal_data")
+  @@index([tipo], map: "idx_cal_tipo")
+}
+
+model disciplina {
+  id                 String               @id @db.Char(36)
+  nome               String               @db.VarChar(150)
+  carga_horaria      Int                  @db.SmallInt
+  created_at         DateTime             @default(now()) @db.Timestamp(0)
+  updated_at         DateTime             @default(now()) @db.Timestamp(0)
+  alocacao_professor alocacao_professor[]
+
+  @@index([nome], map: "idx_disc_nome")
+}
+
+model turma {
+  id                 String               @id @db.Char(36)
+  codigo             String               @db.VarChar(50)
+  ano_letivo         Int                  @db.Year
+  turno              turma_turno
+  calendario_id      String               @db.Char(36)
+  created_at         DateTime             @default(now()) @db.Timestamp(0)
+  updated_at         DateTime             @default(now()) @db.Timestamp(0)
+  alocacao_aluno     alocacao_aluno[]
+  alocacao_professor alocacao_professor[]
+  calendario_escolar calendario_escolar   @relation(fields: [calendario_id], references: [id], onUpdate: Restrict, map: "fk_turma_calendario")
+
+  @@unique([codigo, ano_letivo], map: "uq_turma_codigo_ano")
+  @@index([ano_letivo], map: "idx_turma_ano")
+  @@index([calendario_id], map: "idx_turma_calendario")
+}
+
+enum calendario_escolar_tipo {
+  AULA
+  FERIADO
+  RECESSO
+  EVENTO
+}
+
+enum turma_turno {
+  MANHA
+  TARDE
+  NOITE
+}

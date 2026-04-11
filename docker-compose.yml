@@ -1,0 +1,79 @@
+version: '3.9'
+
+# Executa todos os microserviços localmente.
+# Pré-requisito: cada serviço precisa ter node_modules (npm install) e
+# o schema.prisma gerado (npm run db:pull && npm run db:generate).
+#
+# Para subir tudo: docker-compose up
+# Para subir um único serviço: docker-compose up auth-service
+
+services:
+  auth-service:
+    build:
+      context: ./auth-service
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./auth-service/.env
+    restart: unless-stopped
+
+  ms01-alunos:
+    build:
+      context: ./MS01_gestao_de_alunos
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+    env_file:
+      - ./MS01_gestao_de_alunos/.env
+    depends_on:
+      - auth-service
+    restart: unless-stopped
+
+  ms02-professores:
+    build:
+      context: ./MS02_gestao_de_professores
+      dockerfile: Dockerfile
+    ports:
+      - "3002:3002"
+    env_file:
+      - ./MS02_gestao_de_professores/.env
+    depends_on:
+      - auth-service
+    restart: unless-stopped
+
+  ms03-turmas:
+    build:
+      context: ./MS03_turmas_e_disciplinas
+      dockerfile: Dockerfile
+    ports:
+      - "3003:3003"
+    env_file:
+      - ./MS03_turmas_e_disciplinas/.env
+    depends_on:
+      - auth-service
+    restart: unless-stopped
+
+  ms04-notas:
+    build:
+      context: ./MS04_avaliacoes_e_notas
+      dockerfile: Dockerfile
+    ports:
+      - "3004:3004"
+    env_file:
+      - ./MS04_avaliacoes_e_notas/.env
+    depends_on:
+      - auth-service
+    restart: unless-stopped
+
+  ms05-comunicacao:
+    build:
+      context: ./MS05_comunicacao_escolar
+      dockerfile: Dockerfile
+    ports:
+      - "3005:3005"
+    env_file:
+      - ./MS05_comunicacao_escolar/.env
+    depends_on:
+      - auth-service
+    restart: unless-stopped

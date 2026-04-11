@@ -1,0 +1,115 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model evento_grade {
+  id               String            @id @db.Char(36)
+  grade_horaria_id String            @db.Char(36)
+  tipo             evento_grade_tipo
+  descricao        String?           @db.Text
+  processado       Boolean           @default(false)
+  publicado_em     DateTime          @default(now()) @db.Timestamp(0)
+  processado_em    DateTime?         @db.Timestamp(0)
+  grade_horaria    grade_horaria     @relation(fields: [grade_horaria_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_eg_grade")
+
+  @@index([grade_horaria_id], map: "fk_eg_grade")
+  @@index([processado], map: "idx_eg_processado")
+  @@index([publicado_em], map: "idx_eg_publicado_em")
+}
+
+model grade_horaria {
+  id                     String                   @id @db.Char(36)
+  professor_id           String                   @db.Char(36)
+  turma_id               String                   @db.Char(36)
+  disciplina_id          String                   @db.Char(36)
+  bimestre               Int                      @db.SmallInt
+  ano_letivo             Int                      @db.Year
+  dia_semana             grade_horaria_dia_semana
+  horario_inicio         DateTime                 @db.Time(0)
+  horario_fim            DateTime                 @db.Time(0)
+  created_at             DateTime                 @default(now()) @db.Timestamp(0)
+  updated_at             DateTime                 @default(now()) @db.Timestamp(0)
+  evento_grade           evento_grade[]
+  professor              professor                @relation(fields: [professor_id], references: [id], onUpdate: Restrict, map: "fk_gh_professor")
+  substituicao_professor substituicao_professor[]
+
+  @@unique([professor_id, turma_id, bimestre, ano_letivo, dia_semana, horario_inicio], map: "uq_grade_horaria")
+  @@index([bimestre, ano_letivo], map: "idx_gh_bimestre_ano")
+  @@index([dia_semana], map: "idx_gh_dia_semana")
+  @@index([professor_id], map: "idx_gh_professor")
+  @@index([turma_id], map: "idx_gh_turma")
+}
+
+model professor {
+  id                     String                   @id @db.Char(36)
+  nome_completo          String                   @db.VarChar(255)
+  email                  String                   @unique(map: "uq_professor_email") @db.VarChar(255)
+  created_at             DateTime                 @default(now()) @db.Timestamp(0)
+  updated_at             DateTime                 @default(now()) @db.Timestamp(0)
+  grade_horaria          grade_horaria[]
+  professor_disciplina   professor_disciplina[]
+  professor_turma        professor_turma[]
+  substituicao_professor substituicao_professor[]
+
+  @@index([nome_completo], map: "idx_professor_nome")
+}
+
+model professor_disciplina {
+  id            String    @id @db.Char(36)
+  professor_id  String    @db.Char(36)
+  disciplina_id String    @db.Char(36)
+  professor     professor @relation(fields: [professor_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_pd_professor")
+
+  @@unique([professor_id, disciplina_id], map: "uq_professor_disciplina")
+  @@index([disciplina_id], map: "idx_pd_disciplina")
+  @@index([professor_id], map: "idx_pd_professor")
+}
+
+model professor_turma {
+  id            String    @id @db.Char(36)
+  professor_id  String    @db.Char(36)
+  turma_id      String    @db.Char(36)
+  disciplina_id String    @db.Char(36)
+  professor     professor @relation(fields: [professor_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_pt_professor")
+
+  @@unique([professor_id, turma_id, disciplina_id], map: "uq_professor_turma")
+  @@index([disciplina_id], map: "idx_pt_disciplina")
+  @@index([professor_id], map: "idx_pt_professor")
+  @@index([turma_id], map: "idx_pt_turma")
+}
+
+model substituicao_professor {
+  id                      String        @id @db.Char(36)
+  grade_horaria_id        String        @db.Char(36)
+  professor_substituto_id String        @db.Char(36)
+  motivo                  String?       @db.Text
+  data_inicio             DateTime      @db.Date
+  data_fim                DateTime?     @db.Date
+  created_at              DateTime      @default(now()) @db.Timestamp(0)
+  grade_horaria           grade_horaria @relation(fields: [grade_horaria_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_sp_grade")
+  professor               professor     @relation(fields: [professor_substituto_id], references: [id], onUpdate: Restrict, map: "fk_sp_substituto")
+
+  @@index([data_inicio, data_fim], map: "idx_sp_datas")
+  @@index([grade_horaria_id], map: "idx_sp_grade")
+  @@index([professor_substituto_id], map: "idx_sp_substituto")
+}
+
+enum evento_grade_tipo {
+  CRIACAO
+  EDICAO
+  SUBSTITUICAO
+}
+
+enum grade_horaria_dia_semana {
+  SEGUNDA
+  TERCA
+  QUARTA
+  QUINTA
+  SEXTA
+  SABADO
+}

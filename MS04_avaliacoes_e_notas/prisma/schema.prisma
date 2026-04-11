@@ -1,0 +1,99 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model avaliacao {
+  id             String         @id @db.Char(36)
+  titulo         String         @db.VarChar(120)
+  tipo           avaliacao_tipo
+  bimestre       Int            @db.SmallInt
+  ano_letivo     Int            @db.Year
+  disciplina_id  String         @db.Char(36)
+  turma_id       String         @db.Char(36)
+  professor_id   String         @db.Char(36)
+  data_aplicacao DateTime       @db.Date
+  peso_na_media  Decimal        @default(1.00) @db.Decimal(4, 2)
+  criada_em      DateTime       @default(now()) @db.Timestamp(0)
+  nota           nota[]
+
+  @@index([bimestre, ano_letivo], map: "idx_aval_bim_ano")
+  @@index([disciplina_id], map: "idx_aval_disciplina")
+  @@index([professor_id], map: "idx_aval_professor")
+  @@index([turma_id], map: "idx_aval_turma")
+}
+
+model configuracao_avaliacao {
+  id                    String   @id @db.Char(36)
+  media_min_aprovacao   Decimal  @default(6.00) @db.Decimal(4, 2)
+  vigente_desde         DateTime @default(now()) @db.Timestamp(0)
+  alterado_por_admin_id String   @db.Char(36)
+  ativa                 Boolean  @default(false)
+
+  @@index([ativa], map: "idx_config_ativa")
+}
+
+model media_bimestral {
+  id                   String   @id @db.Char(36)
+  aluno_id             String   @db.Char(36)
+  disciplina_id        String   @db.Char(36)
+  bimestre             Int      @db.SmallInt
+  ano_letivo           Int      @db.Year
+  valor_calculado      Decimal  @db.Decimal(4, 2)
+  recuperacao_aplicada Boolean  @default(false)
+  calculada_em         DateTime @default(now()) @db.Timestamp(0)
+
+  @@unique([aluno_id, disciplina_id, bimestre, ano_letivo], map: "uq_media_aluno_bim")
+  @@index([aluno_id, ano_letivo], map: "idx_mb_aluno_ano")
+  @@index([disciplina_id], map: "idx_mb_disciplina")
+}
+
+model nota {
+  id           String    @id @db.Char(36)
+  avaliacao_id String    @db.Char(36)
+  aluno_id     String    @db.Char(36)
+  professor_id String    @db.Char(36)
+  valor        Decimal   @db.Decimal(4, 2)
+  substituida  Boolean   @default(false)
+  lancada_em   DateTime  @default(now()) @db.Timestamp(0)
+  editada_em   DateTime? @db.Timestamp(0)
+  avaliacao    avaliacao @relation(fields: [avaliacao_id], references: [id], onUpdate: Restrict, map: "fk_nota_avaliacao")
+
+  @@unique([avaliacao_id, aluno_id], map: "uq_nota_aluno_avaliacao")
+  @@index([aluno_id], map: "idx_nota_aluno")
+}
+
+model prova_final {
+  id               String             @id @db.Char(36)
+  aluno_id         String             @db.Char(36)
+  disciplina_id    String             @db.Char(36)
+  ano_letivo       Int                @db.Year
+  nota_prova_final Decimal?           @db.Decimal(4, 2)
+  media_anual      Decimal            @db.Decimal(4, 2)
+  media_final      Decimal?           @db.Decimal(4, 2)
+  status           prova_final_status @default(EM_CURSO)
+  lancada_em       DateTime           @default(now()) @db.Timestamp(0)
+
+  @@unique([aluno_id, disciplina_id, ano_letivo], map: "uq_pf_aluno_disc")
+  @@index([aluno_id, ano_letivo], map: "idx_pf_aluno_ano")
+  @@index([disciplina_id], map: "idx_pf_disciplina")
+}
+
+enum avaliacao_tipo {
+  PROVA
+  TRABALHO
+  RECUPERACAO
+  PROVA_FINAL
+}
+
+enum prova_final_status {
+  EM_CURSO
+  APROVADO
+  APROVADO_PF
+  REPROVADO_NOTA
+  REPROVADO_FALTA
+}

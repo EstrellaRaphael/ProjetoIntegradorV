@@ -1,0 +1,24 @@
+{
+  "name": "ms02-gestao-de-professores",
+  "version": "1.0.0",
+  "description": "MS-02 Gestão de Professores — perfis, grade horária, substituições",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "nodemon src/index.js",
+    "start": "node src/index.js",
+    "db:pull": "prisma db pull",
+    "db:generate": "prisma generate"
+  },
+  "dependencies": {
+    "@fastify/cors": "^10.0.0",
+    "@fastify/jwt": "^9.0.0",
+    "@prisma/client": "^6.0.0",
+    "dotenv": "^16.0.0",
+    "fastify": "^5.0.0",
+    "fastify-plugin": "^5.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.0",
+    "prisma": "^6.0.0"
+  }
+}

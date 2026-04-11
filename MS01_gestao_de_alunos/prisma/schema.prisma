@@ -1,0 +1,132 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model aluno {
+  id                     String                   @id @db.Char(36)
+  matricula              String                   @unique(map: "uq_aluno_matricula") @db.VarChar(30)
+  nome_completo          String                   @db.VarChar(255)
+  data_nascimento        DateTime                 @db.Date
+  email                  String                   @unique(map: "uq_aluno_email") @db.VarChar(255)
+  cpf                    String                   @unique(map: "uq_aluno_cpf") @db.VarChar(14)
+  telefone               String?                  @db.VarChar(20)
+  end_logradouro         String                   @db.VarChar(255)
+  end_numero             String                   @db.VarChar(20)
+  end_complemento        String?                  @db.VarChar(100)
+  end_bairro             String                   @db.VarChar(100)
+  end_cidade             String                   @db.VarChar(100)
+  end_estado             String                   @db.Char(2)
+  end_cep                String                   @db.VarChar(9)
+  turma_atual_id         String?                  @db.Char(36)
+  status                 aluno_status             @default(ATIVO)
+  created_at             DateTime                 @default(now()) @db.Timestamp(0)
+  updated_at             DateTime                 @default(now()) @db.Timestamp(0)
+  frequencia_consolidada frequencia_consolidada[]
+  historico_escolar      historico_escolar[]
+  override_frequencia    override_frequencia[]
+  registro_frequencia    registro_frequencia[]
+}
+
+model frequencia_consolidada {
+  id                  String  @id @db.Char(36)
+  aluno_id            String  @db.Char(36)
+  disciplina_id       String  @db.Char(36)
+  bimestre            Int     @db.SmallInt
+  total_aulas         Int
+  total_presencas     Int
+  percentual          Decimal @db.Decimal(5, 2)
+  reprovado_por_falta Boolean @default(false)
+  aluno               aluno   @relation(fields: [aluno_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_fc_aluno")
+
+  @@unique([aluno_id, disciplina_id, bimestre], map: "uq_fc_aluno_disciplina_bimestre")
+  @@index([aluno_id], map: "idx_fc_aluno_id")
+  @@index([disciplina_id], map: "idx_fc_disciplina_id")
+}
+
+model historico_escolar {
+  id                   String                     @id @db.Char(36)
+  aluno_id             String                     @db.Char(36)
+  ano_letivo           Int                        @db.SmallInt
+  turma_id             String                     @db.Char(36)
+  turma_descricao      String                     @db.VarChar(100)
+  situacao             historico_escolar_situacao
+  bloqueado_edicao     Boolean                    @default(false)
+  aluno                aluno                      @relation(fields: [aluno_id], references: [id], onUpdate: Restrict, map: "fk_he_aluno")
+  resultado_disciplina resultado_disciplina[]
+
+  @@unique([aluno_id, ano_letivo], map: "uq_he_aluno_ano")
+  @@index([aluno_id], map: "idx_he_aluno_id")
+  @@index([ano_letivo], map: "idx_he_ano_letivo")
+}
+
+model override_frequencia {
+  id              String   @id @db.Char(36)
+  aluno_id        String   @db.Char(36)
+  disciplina_id   String   @db.Char(36)
+  admin_id        String   @db.Char(36)
+  justificativa   String   @db.Text
+  data_decisao    DateTime @default(now()) @db.Timestamp(0)
+  status_anterior Boolean
+  aluno           aluno    @relation(fields: [aluno_id], references: [id], onUpdate: Restrict, map: "fk_of_aluno")
+
+  @@index([aluno_id], map: "idx_of_aluno_id")
+  @@index([disciplina_id], map: "idx_of_disciplina_id")
+}
+
+model registro_frequencia {
+  id            String   @id @db.Char(36)
+  aluno_id      String   @db.Char(36)
+  disciplina_id String   @db.Char(36)
+  turma_id      String   @db.Char(36)
+  data          DateTime @db.Date
+  presente      Boolean
+  bimestre      Int      @db.SmallInt
+  professor_id  String   @db.Char(36)
+  observacao    String?  @db.Text
+  aluno         aluno    @relation(fields: [aluno_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_rf_aluno")
+
+  @@index([aluno_id], map: "idx_rf_aluno_id")
+  @@index([bimestre], map: "idx_rf_bimestre")
+  @@index([data], map: "idx_rf_data")
+  @@index([disciplina_id], map: "idx_rf_disciplina_id")
+}
+
+model resultado_disciplina {
+  id                    String                            @id @db.Char(36)
+  historico_escolar_id  String                            @db.Char(36)
+  disciplina_id         String                            @db.Char(36)
+  disciplina_nome       String                            @db.VarChar(150)
+  media_anual           Decimal?                          @db.Decimal(4, 2)
+  frequencia_percentual Decimal?                          @db.Decimal(5, 2)
+  status_final          resultado_disciplina_status_final
+  fonte                 String                            @default("MS-4") @db.VarChar(50)
+  historico_escolar     historico_escolar                 @relation(fields: [historico_escolar_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_rd_historico")
+
+  @@unique([historico_escolar_id, disciplina_id], map: "uq_rd_historico_disciplina")
+  @@index([disciplina_id], map: "idx_rd_disciplina_id")
+  @@index([historico_escolar_id], map: "idx_rd_historico_id")
+}
+
+enum historico_escolar_situacao {
+  APROVADO
+  REPROVADO_NOTA
+  REPROVADO_FALTA
+}
+
+enum resultado_disciplina_status_final {
+  APROVADO
+  APROVADO_PF
+  REPROVADO_NOTA
+  REPROVADO_FALTA
+}
+
+enum aluno_status {
+  ATIVO
+  INATIVO
+  TRANSFERIDO
+}
