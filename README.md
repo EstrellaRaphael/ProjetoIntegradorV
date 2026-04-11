@@ -134,7 +134,7 @@ ProjetoIntegradorV/
 ├── MS02_gestao_de_professores/      ← porta 3002
 ├── MS03_turmas_e_disciplinas/       ← porta 3003
 ├── MS04_avaliacoes_e_notas/         ← porta 3004 (tem services/nota.service.ts)
-├── MS05_comunicacao_escolar/        ← porta 3005 (aguardando schema)
+├── MS05_comunicacao_escolar/        ← porta 3005
 └── frontend/                        ← React SPA (porta 5173)
 ```
 
@@ -374,7 +374,16 @@ curl http://localhost:3005/health  # MS-05
 
 ### MS-05 Comunicação Escolar (porta 3005)
 
-> Em desenvolvimento — aguardando script SQL e diagrama de classes (Otávio Brito).
+| Método | Rota | Role | Descrição |
+|---|---|---|---|
+| GET | `/v1/communications` | Todos | Lista comunicados (filtrado por role) |
+| GET | `/v1/communications/recent` | Todos | Feed dos 20 mais recentes |
+| GET | `/v1/communications/unread` | Todos | Contagem de não lidos |
+| GET | `/v1/communications/:id` | Todos | Detalhes de um comunicado |
+| POST | `/v1/communications` | ADMIN, PROFESSOR | Cria e envia comunicado |
+| PUT | `/v1/communications/:id/read` | Todos | Marca como lido |
+| GET | `/v1/notifications/preferences` | Todos | Preferências de notificação |
+| PUT | `/v1/notifications/preferences` | Todos | Atualiza preferências |
 
 ---
 
