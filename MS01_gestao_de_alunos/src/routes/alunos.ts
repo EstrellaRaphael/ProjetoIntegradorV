@@ -124,7 +124,9 @@ const alunosRoutes: FastifyPluginAsync = async (fastify) => {
     const data = {
       id: randomUUID(),
       matricula: request.body.matricula ?? `MAT-${Date.now()}`,
-      ...request.body
+      ...request.body,
+      // Prisma @db.Date / @db.DateTime precisa de objeto Date
+      data_nascimento: new Date(request.body.data_nascimento),
     }
 
     const aluno = await fastify.prisma.aluno.create({ data })
@@ -135,9 +137,13 @@ const alunosRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.put<{ Params: AlunoParams }>('/:id', {
     preHandler: fastify.requireRole(['ADMIN'])
   }, async (request, reply) => {
+    const body = request.body as Record<string, unknown>
+    if (typeof body.data_nascimento === 'string') {
+      body.data_nascimento = new Date(body.data_nascimento as string)
+    }
     const aluno = await fastify.prisma.aluno.update({
       where: { id: request.params.id },
-      data: request.body as Record<string, unknown>
+      data: body
     })
     return reply.send(aluno)
   })

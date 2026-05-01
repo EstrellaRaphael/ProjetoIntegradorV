@@ -33,6 +33,14 @@ interface SubstituicaoBody {
   data_fim?: string
 }
 
+/** Converte "HH:MM:SS" para Date compatível com @db.Time do Prisma (MySQL) */
+function timeToDate(t: string): Date {
+  const [h, m, s] = t.split(':').map(Number)
+  const d = new Date(0)
+  d.setUTCHours(h, m, s ?? 0, 0)
+  return d
+}
+
 const gradeRoutes: FastifyPluginAsync = async (fastify) => {
   // ── GET /v1/teachers/:id/schedule — Admin ou próprio professor ────────────
   fastify.get<{ Params: GradeParams; Querystring: GradeQuery }>('/:id/schedule', {
@@ -65,10 +73,9 @@ const gradeRoutes: FastifyPluginAsync = async (fastify) => {
     return reply.send(grade)
   })
 
-  // ── GET /v1/teachers/schedule/changes/recent — feed do dashboard ──────────
-  fastify.get('/schedule/changes/recent', {
-    preHandler: fastify.authenticate
-  }, async (_request, reply) => {
+  // ── GET /v1/teachers/schedule/changes/recent — feed do dashboard / polling interno ──
+  // Rota sem autenticação para permitir polling interno do gradeWorker (MS-05)
+  fastify.get('/schedule/changes/recent', async (_request, reply) => {
     const eventos = await fastify.prisma.evento_grade.findMany({
       where: { processado: false },
       include: { grade_horaria: true },
@@ -103,8 +110,13 @@ const gradeRoutes: FastifyPluginAsync = async (fastify) => {
       data: {
         id: randomUUID(),
         professor_id: id,
-        ...request.body,
-        dia_semana: request.body.dia_semana as grade_horaria_dia_semana
+        turma_id: request.body.turma_id,
+        disciplina_id: request.body.disciplina_id,
+        bimestre: request.body.bimestre,
+        ano_letivo: request.body.ano_letivo,
+        dia_semana: request.body.dia_semana as grade_horaria_dia_semana,
+        horario_inicio: timeToDate(request.body.horario_inicio),
+        horario_fim: timeToDate(request.body.horario_fim),
       }
     })
 
@@ -127,9 +139,14 @@ const gradeRoutes: FastifyPluginAsync = async (fastify) => {
   }, async (request, reply) => {
     const { gradeId } = request.params
 
+    const body = request.body as Partial<GradeBody>
+    const updateData: Record<string, unknown> = { ...body }
+    if (body.horario_inicio) updateData.horario_inicio = timeToDate(body.horario_inicio)
+    if (body.horario_fim) updateData.horario_fim = timeToDate(body.horario_fim)
+
     const grade = await fastify.prisma.grade_horaria.update({
       where: { id: gradeId },
-      data: request.body as Record<string, unknown>
+      data: updateData
     })
 
     await fastify.prisma.evento_grade.create({
@@ -164,9 +181,17 @@ const gradeRoutes: FastifyPluginAsync = async (fastify) => {
     },
     async (request, reply) => {
       const { gradeId } = request.params
+      const { professor_substituto_id, motivo, data_inicio, data_fim } = request.body
 
       const sub = await fastify.prisma.substituicao_professor.create({
-        data: { id: randomUUID(), grade_horaria_id: gradeId, ...request.body }
+        data: {
+          id: randomUUID(),
+          grade_horaria_id: gradeId,
+          professor_substituto_id,
+          motivo,
+          data_inicio: new Date(data_inicio),
+          data_fim: data_fim ? new Date(data_fim) : undefined,
+        }
       })
 
       await fastify.prisma.evento_grade.create({

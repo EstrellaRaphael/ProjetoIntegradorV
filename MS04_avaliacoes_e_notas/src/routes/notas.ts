@@ -128,13 +128,34 @@ const notasRoutes: FastifyPluginAsync = async (fastify) => {
       where: { id: request.body.avaliacao_id }
     })
     if (avaliacao) {
-      await recalcularMedia(
-        fastify.prisma,
-        request.body.aluno_id,
-        avaliacao.disciplina_id,
-        avaliacao.bimestre,
-        avaliacao.ano_letivo
-      )
+      if (avaliacao.tipo === 'RECUPERACAO') {
+        // Lógica de recuperação: substitui média bimestral se a nota for maior
+        const mediaBimestral = await fastify.prisma.media_bimestral.findFirst({
+          where: {
+            aluno_id: request.body.aluno_id,
+            disciplina_id: avaliacao.disciplina_id,
+            bimestre: avaliacao.bimestre,
+            ano_letivo: avaliacao.ano_letivo,
+          }
+        })
+        if (mediaBimestral && Number(request.body.valor) > Number(mediaBimestral.valor_calculado)) {
+          await fastify.prisma.media_bimestral.update({
+            where: { id: mediaBimestral.id },
+            data: {
+              valor_calculado: Number(request.body.valor),
+              recuperacao_aplicada: true,
+            }
+          })
+        }
+      } else {
+        await recalcularMedia(
+          fastify.prisma,
+          request.body.aluno_id,
+          avaliacao.disciplina_id,
+          avaliacao.bimestre,
+          avaliacao.ano_letivo
+        )
+      }
     }
 
     return reply.code(201).send(nota)
@@ -208,13 +229,38 @@ const notasRoutes: FastifyPluginAsync = async (fastify) => {
   }, async (request, reply) => {
     const { aluno_id, disciplina_id, ano_letivo, nota_prova_final } = request.body
 
-    const existing = await fastify.prisma.prova_final.findUnique({
+    let existing = await fastify.prisma.prova_final.findUnique({
       where: { aluno_id_disciplina_id_ano_letivo: { aluno_id, disciplina_id, ano_letivo } }
     })
 
+    // Auto-cria o registro de prova final calculando a media_anual se ainda não existe
     if (!existing) {
-      return reply.code(400).send({
-        error: 'Registro de prova final não encontrado. Calcule a média anual primeiro.'
+      const medias = await fastify.prisma.media_bimestral.findMany({
+        where: { aluno_id, disciplina_id, ano_letivo }
+      })
+      if (medias.length === 0) {
+        return reply.code(400).send({
+          error: 'Nenhuma média bimestral encontrada para este aluno/disciplina/ano.'
+        })
+      }
+      const soma = medias.reduce((acc, m) => acc + Number(m.valor_calculado), 0)
+      const mediaAnual = Number((soma / medias.length).toFixed(2))
+      const config = await fastify.prisma.configuracao_avaliacao.findFirst({ where: { ativa: true } })
+      const mediaMin = Number(config?.media_min_aprovacao ?? MEDIA_MINIMA_APROVACAO_PADRAO)
+      if (mediaAnual >= mediaMin) {
+        return reply.code(400).send({
+          error: `Aluno aprovado direto (média anual ${mediaAnual} ≥ ${mediaMin}). Prova final não aplicável.`
+        })
+      }
+      existing = await fastify.prisma.prova_final.create({
+        data: {
+          id: randomUUID(),
+          aluno_id,
+          disciplina_id,
+          ano_letivo,
+          media_anual: mediaAnual,
+          status: 'EM_CURSO',
+        }
       })
     }
 

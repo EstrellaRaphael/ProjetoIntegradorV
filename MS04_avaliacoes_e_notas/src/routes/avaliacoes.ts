@@ -88,6 +88,7 @@ const avaliacoesRoutes: FastifyPluginAsync = async (fastify) => {
         id: randomUUID(),
         professor_id: professorId ?? '',
         ...request.body,
+        data_aplicacao: new Date(request.body.data_aplicacao),
         tipo: request.body.tipo as avaliacao_tipo
       }
     })
@@ -98,9 +99,13 @@ const avaliacoesRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.put<{ Params: AvaliacaoParams }>('/:id', {
     preHandler: fastify.requireRole(['PROFESSOR', 'ADMIN'])
   }, async (request, reply) => {
+    const body = request.body as Record<string, unknown>
+    if (typeof body.data_aplicacao === 'string') {
+      body.data_aplicacao = new Date(body.data_aplicacao as string)
+    }
     const av = await fastify.prisma.avaliacao.update({
       where: { id: request.params.id },
-      data: request.body as Record<string, unknown>
+      data: body
     })
     return reply.send(av)
   })

@@ -53,10 +53,9 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
       expiresIn: process.env.JWT_EXPIRES_IN ?? '15m'
     })
 
-    // O refresh token carrega apenas o subject; cast necessário pois o payload
-    // do namespace refreshJwt é o mesmo tipo que o access token (herança do módulo)
-    const refreshToken = fastify.refreshJwt.sign(
-      { sub: usuario.id } as Parameters<typeof fastify.refreshJwt.sign>[0],
+    // O refresh token usa o namespace 'refreshJwt' (fastify.jwt.refreshJwt)
+    const refreshToken = (fastify.jwt as any).refreshJwt.sign(
+      { sub: usuario.id },
       { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN ?? '7d' }
     )
 
@@ -72,7 +71,7 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
 
     let decoded: { sub: string }
     try {
-      decoded = fastify.refreshJwt.verify(refreshToken) as { sub: string }
+      decoded = (fastify.jwt as any).refreshJwt.verify(refreshToken) as { sub: string }
     } catch {
       return reply.code(401).send({ error: 'Refresh token inválido ou expirado' })
     }

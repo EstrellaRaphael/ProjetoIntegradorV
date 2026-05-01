@@ -13,13 +13,12 @@ const fastify = Fastify({ logger: true })
 // ── Middlewares globais ───────────────────────────────────────────────────────
 fastify.register(cors, { origin: true })
 
-// JWT principal — access token (15 min)
+// JWT principal — access token (15 min) — sem namespace: expõe fastify.jwt.sign/verify
 fastify.register(jwt, {
   secret: process.env.JWT_SECRET as string,
-  namespace: 'jwt'
 })
 
-// JWT de refresh — 7 dias (namespace separado para não misturar segredos)
+// JWT de refresh — 7 dias — namespace 'refreshJwt' expõe fastify.jwt.refreshJwt.sign/verify
 fastify.register(jwt, {
   secret: process.env.JWT_REFRESH_SECRET as string,
   namespace: 'refreshJwt'

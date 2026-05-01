@@ -1,6 +1,5 @@
 import { FastifyRequest, FastifyReply } from 'fastify'
 import { PrismaClient } from '@prisma/client'
-import type { JWT } from '@fastify/jwt'
 
 export type Role = 'ADMIN' | 'PROFESSOR' | 'ALUNO'
 
@@ -24,7 +23,5 @@ declare module 'fastify' {
   interface FastifyInstance {
     prisma: PrismaClient
     authenticate: (request: FastifyRequest, reply: FastifyReply) => Promise<void>
-    /** Namespace JWT de refresh (7 dias) — registrado com namespace 'refreshJwt' */
-    refreshJwt: JWT
   }
 }

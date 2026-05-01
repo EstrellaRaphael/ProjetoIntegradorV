@@ -134,7 +134,12 @@ const turmasRoutes: FastifyPluginAsync = async (fastify) => {
     }
   }, async (request, reply) => {
     const alocacao = await fastify.prisma.alocacao_aluno.create({
-      data: { id: randomUUID(), turma_id: request.params.id, ...request.body }
+      data: {
+        id: randomUUID(),
+        turma_id: request.params.id,
+        aluno_id: request.body.aluno_id,
+        data_matricula: new Date(request.body.data_matricula),
+      }
     })
     return reply.code(201).send(alocacao)
   })

@@ -60,6 +60,7 @@ const calendarioRoutes: FastifyPluginAsync = async (fastify) => {
       data: {
         id: randomUUID(),
         ...request.body,
+        data: new Date(request.body.data),
         tipo: request.body.tipo as calendario_escolar_tipo
       }
     })

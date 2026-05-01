@@ -80,7 +80,8 @@ const frequenciasRoutes: FastifyPluginAsync = async (fastify) => {
         id: randomUUID(),
         aluno_id: id,
         professor_id: professorId ?? '',
-        ...request.body
+        ...request.body,
+        data: new Date(request.body.data),
       }
     })
 
