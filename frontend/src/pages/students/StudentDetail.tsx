@@ -27,10 +27,11 @@ function statusBadge(status: string) {
   return <span className={map[status] ?? 'badge badge-neutral'}>{status}</span>
 }
 
-function gradeBadge(value: number) {
-  if (value >= 7) return <span className="badge badge-success">{value.toFixed(1).replace('.', ',')}</span>
-  if (value >= 5) return <span className="badge badge-warning">{value.toFixed(1).replace('.', ',')}</span>
-  return <span className="badge badge-danger">{value.toFixed(1).replace('.', ',')}</span>
+function gradeBadge(value: string | number) {
+  const v = Number(value)
+  if (v >= 7) return <span className="badge badge-success">{v.toFixed(1).replace('.', ',')}</span>
+  if (v >= 5) return <span className="badge badge-warning">{v.toFixed(1).replace('.', ',')}</span>
+  return <span className="badge badge-danger">{v.toFixed(1).replace('.', ',')}</span>
 }
 
 type Tab = 'dados' | 'frequencia' | 'boletim' | 'historico'
@@ -226,10 +227,10 @@ export default function StudentDetailPage() {
                       <td className="td text-center">{f.bimestre}º BIM</td>
                       <td className="td text-center">{f.total_aulas}</td>
                       <td className="td text-center text-success">{f.total_presencas}</td>
-                      <td className="td text-center text-error">{f.total_faltas}</td>
+                      <td className="td text-center text-error">{f.total_aulas - f.total_presencas}</td>
                       <td className="td text-center">
-                        <span className={`badge ${f.percentual_frequencia >= 75 ? 'badge-success' : 'badge-danger'}`}>
-                          {f.percentual_frequencia.toFixed(1)}%
+                        <span className={`badge ${Number(f.percentual) >= 75 ? 'badge-success' : 'badge-danger'}`}>
+                          {Number(f.percentual).toFixed(1)}%
                         </span>
                       </td>
                       <td className="td text-center">
@@ -273,9 +274,9 @@ export default function StudentDetailPage() {
                 ) : (
                   Object.entries(byDisciplina).map(([discId, bims]) => {
                     const getB = (b: number) => bims.find((m) => m.bimestre === b)
-                    const validBims = bims.filter((m) => m.valor_calculado > 0)
+                    const validBims = bims.filter((m) => Number(m.valor_calculado) > 0)
                     const avg = validBims.length > 0
-                      ? validBims.reduce((s, m) => s + m.valor_calculado, 0) / validBims.length
+                      ? validBims.reduce((s, m) => s + Number(m.valor_calculado), 0) / validBims.length
                       : 0
                     return (
                       <tr key={discId} className="tr-row">

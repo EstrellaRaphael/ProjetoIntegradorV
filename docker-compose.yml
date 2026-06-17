@@ -77,3 +77,18 @@ services:
     depends_on:
       - auth-service
     restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - auth-service
+      - ms01-alunos
+      - ms02-professores
+      - ms03-turmas
+      - ms04-notas
+      - ms05-comunicacao
+    restart: unless-stopped

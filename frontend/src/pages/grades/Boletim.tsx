@@ -4,11 +4,12 @@ import { gradesService, studentsService } from '../../services/api'
 import { useAuthStore } from '../../store/authStore'
 import type { Aluno, MediaBimestral, ProvaFinal, FrequenciaConsolidada } from '../../types'
 
-function gradeBadge(value: number | undefined) {
-  if (value === undefined) return <span className="text-on-surface-variant tabular-nums">—</span>
-  const fmt = value.toFixed(1).replace('.', ',')
-  if (value >= 7) return <span className="badge badge-success tabular-nums">{fmt}</span>
-  if (value >= 5) return <span className="badge badge-warning tabular-nums">{fmt}</span>
+function gradeBadge(value: string | number | undefined) {
+  if (value === undefined || value === null) return <span className="text-on-surface-variant tabular-nums">—</span>
+  const v = Number(value)
+  const fmt = v.toFixed(1).replace('.', ',')
+  if (v >= 7) return <span className="badge badge-success tabular-nums">{fmt}</span>
+  if (v >= 5) return <span className="badge badge-warning tabular-nums">{fmt}</span>
   return <span className="badge badge-danger tabular-nums">{fmt}</span>
 }
 
@@ -122,7 +123,7 @@ export default function BoletimPage() {
                   const recBim = bims.find((m) => m.recuperacao_aplicada)
                   const regularBims = bims.filter((m) => !m.recuperacao_aplicada)
                   const avg = regularBims.length > 0
-                    ? regularBims.reduce((s, m) => s + m.valor_calculado, 0) / regularBims.length
+                    ? regularBims.reduce((s, m) => s + Number(m.valor_calculado), 0) / regularBims.length
                     : 0
 
                   const pf = provasFinais.find((p) => p.disciplina_id === discId)
@@ -185,10 +186,10 @@ export default function BoletimPage() {
                     <td className="td text-center">{f.bimestre}º BIM</td>
                     <td className="td text-center">{f.total_aulas}</td>
                     <td className="td text-center text-success">{f.total_presencas}</td>
-                    <td className="td text-center text-error">{f.total_faltas}</td>
+                    <td className="td text-center text-error">{f.total_aulas - f.total_presencas}</td>
                     <td className="td text-center">
-                      <span className={`badge ${f.percentual_frequencia >= 75 ? 'badge-success' : 'badge-danger'}`}>
-                        {f.percentual_frequencia.toFixed(1)}%
+                      <span className={`badge ${Number(f.percentual) >= 75 ? 'badge-success' : 'badge-danger'}`}>
+                        {Number(f.percentual).toFixed(1)}%
                       </span>
                     </td>
                   </tr>
@@ -209,18 +210,18 @@ export default function BoletimPage() {
                 <p className="text-xs text-on-surface-variant">Disciplina: {pf.disciplina_id.slice(0, 8)}…</p>
                 <div className="flex justify-between text-sm">
                   <span className="text-on-surface-variant">Média Anual</span>
-                  <span className="font-semibold">{pf.media_anual.toFixed(1).replace('.', ',')}</span>
+                  <span className="font-semibold">{Number(pf.media_anual).toFixed(1).replace('.', ',')}</span>
                 </div>
                 {pf.nota_prova_final !== undefined && (
                   <div className="flex justify-between text-sm">
                     <span className="text-on-surface-variant">Nota PF</span>
-                    <span className="font-semibold">{pf.nota_prova_final?.toFixed(1).replace('.', ',')}</span>
+                    <span className="font-semibold">{Number(pf.nota_prova_final).toFixed(1).replace('.', ',')}</span>
                   </div>
                 )}
                 {pf.media_final !== undefined && (
                   <div className="flex justify-between text-sm">
                     <span className="text-on-surface-variant">Média Final</span>
-                    <span className="font-bold">{pf.media_final?.toFixed(1).replace('.', ',')}</span>
+                    <span className="font-bold">{Number(pf.media_final).toFixed(1).replace('.', ',')}</span>
                   </div>
                 )}
                 <div className="pt-1">

@@ -172,6 +172,7 @@ export interface Nota {
   substituida: boolean
   lancada_em: string
   editada_em?: string
+  avaliacao?: Avaliacao
 }
 
 export interface MediaBimestral {
@@ -180,7 +181,7 @@ export interface MediaBimestral {
   disciplina_id: string
   bimestre: number
   ano_letivo: number
-  valor_calculado: number
+  valor_calculado: string | number
   recuperacao_aplicada: boolean
 }
 
@@ -189,9 +190,9 @@ export interface ProvaFinal {
   aluno_id: string
   disciplina_id: string
   ano_letivo: number
-  media_anual: number
-  nota_prova_final?: number
-  media_final?: number
+  media_anual: string | number
+  nota_prova_final?: string | number
+  media_final?: string | number
   status: 'EM_CURSO' | 'APROVADO_PF' | 'REPROVADO_NOTA'
 }
 
@@ -210,8 +211,7 @@ export interface FrequenciaConsolidada {
   bimestre: number
   total_aulas: number
   total_presencas: number
-  total_faltas: number
-  percentual_frequencia: number
+  percentual: string | number
   reprovado_por_falta: boolean
 }
 

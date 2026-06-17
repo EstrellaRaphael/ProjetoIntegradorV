@@ -1,0 +1,2467 @@
+{
+  "info": {
+    "name": "Gestão Escolar — Sistema Completo",
+    "description": "Collection completa cobrindo todos os 6 microsserviços do Sistema de Gestão Escolar v3.0.\n\nOrdem recomendada de execução:\n1. Auth Service (login → salva token automaticamente)\n2. MS-03 Turmas e Disciplinas (cria disciplina, calendário, turma)\n3. MS-02 Professores (cria professor, grade)\n4. MS-01 Alunos (cria aluno, frequência)\n5. MS-04 Avaliações e Notas (avaliações, notas, boletim)\n6. MS-05 Comunicação (comunicados, preferências)\n\nVariáveis de coleção mantidas automaticamente pelos scripts de test.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_auth",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "base_ms01",
+      "value": "http://localhost:3001"
+    },
+    {
+      "key": "base_ms02",
+      "value": "http://localhost:3002"
+    },
+    {
+      "key": "base_ms03",
+      "value": "http://localhost:3003"
+    },
+    {
+      "key": "base_ms04",
+      "value": "http://localhost:3004"
+    },
+    {
+      "key": "base_ms05",
+      "value": "http://localhost:3005"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "refreshToken",
+      "value": ""
+    },
+    {
+      "key": "ID_DISCIPLINA",
+      "value": ""
+    },
+    {
+      "key": "ID_CALENDARIO",
+      "value": ""
+    },
+    {
+      "key": "ID_TURMA",
+      "value": ""
+    },
+    {
+      "key": "ID_PROFESSOR",
+      "value": ""
+    },
+    {
+      "key": "ID_PROFESSOR_2",
+      "value": ""
+    },
+    {
+      "key": "ID_GRADE",
+      "value": ""
+    },
+    {
+      "key": "ID_ALUNO",
+      "value": ""
+    },
+    {
+      "key": "ID_PROVA1",
+      "value": ""
+    },
+    {
+      "key": "ID_TRABALHO1",
+      "value": ""
+    },
+    {
+      "key": "ID_RECUPERACAO",
+      "value": ""
+    },
+    {
+      "key": "ID_NOTA",
+      "value": ""
+    },
+    {
+      "key": "ID_COMUNICADO",
+      "value": ""
+    },
+    {
+      "key": "CALENDARIO_DATA",
+      "value": ""
+    },
+    {
+      "key": "PROF1_EMAIL",
+      "value": ""
+    },
+    {
+      "key": "PROF2_EMAIL",
+      "value": ""
+    },
+    {
+      "key": "ALUNO_EMAIL",
+      "value": ""
+    },
+    {
+      "key": "ALUNO_CPF",
+      "value": ""
+    },
+    {
+      "key": "TURMA_CODIGO",
+      "value": ""
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "🧹 Limpeza (roda antes de cada execução)",
+      "item": [
+        {
+          "name": "Login (para limpeza)",
+          "request": {
+            "method": "POST",
+            "url": "{{base_auth}}/v1/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"admin@escola.com\",\"senha\":\"Admin@123\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('accessToken presente', () => pm.expect(json.accessToken).to.be.a('string').and.to.include('eyJ'));",
+                  "pm.test('role ADMIN', () => pm.expect(json.role).to.eql('ADMIN'));",
+                  "pm.collectionVariables.set('token', json.accessToken);",
+                  "pm.collectionVariables.set('refreshToken', json.refreshToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Limpar Alunos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const token = pm.collectionVariables.get('token');",
+                  "const base = pm.collectionVariables.get('base_ms01');",
+                  "const json = pm.response.json();",
+                  "const items = json.data || [];",
+                  "if (!Array.isArray(items) || items.length === 0) { console.log('Limpar Alunos: nada para deletar'); return; }",
+                  "console.log('Limpar Alunos: deletando', items.length, 'registros');",
+                  "const del = (i) => { if (i >= items.length) return; pm.sendRequest({ url: base + '/v1/students/' + items[i].id, method: 'DELETE', header: { Authorization: 'Bearer ' + token } }, () => del(i+1)); };",
+                  "del(0);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{base_ms01}}/v1/students?limit=1000"
+          }
+        },
+        {
+          "name": "Limpar Professores",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const token = pm.collectionVariables.get('token');",
+                  "const base = pm.collectionVariables.get('base_ms02');",
+                  "const json = pm.response.json();",
+                  "const items = json.data || [];",
+                  "if (!Array.isArray(items) || items.length === 0) { console.log('Limpar Professores: nada para deletar'); return; }",
+                  "console.log('Limpar Professores: deletando', items.length, 'registros');",
+                  "const del = (i) => { if (i >= items.length) return; pm.sendRequest({ url: base + '/v1/teachers/' + items[i].id, method: 'DELETE', header: { Authorization: 'Bearer ' + token } }, () => del(i+1)); };",
+                  "del(0);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{base_ms02}}/v1/teachers?limit=1000"
+          }
+        },
+        {
+          "name": "Limpar Turmas",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const token = pm.collectionVariables.get('token');",
+                  "const base = pm.collectionVariables.get('base_ms03');",
+                  "const json = pm.response.json();",
+                  "const items = json.data || [];",
+                  "if (!Array.isArray(items) || items.length === 0) { console.log('Limpar Turmas: nada para deletar'); return; }",
+                  "console.log('Limpar Turmas: deletando', items.length, 'registros');",
+                  "const del = (i) => { if (i >= items.length) return; pm.sendRequest({ url: base + '/v1/classes/' + items[i].id, method: 'DELETE', header: { Authorization: 'Bearer ' + token } }, () => del(i+1)); };",
+                  "del(0);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{base_ms03}}/v1/classes?limit=1000"
+          }
+        },
+        {
+          "name": "Limpar Disciplinas",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const token = pm.collectionVariables.get('token');",
+                  "const base = pm.collectionVariables.get('base_ms03');",
+                  "const json = pm.response.json();",
+                  "const items = Array.isArray(json) ? json : [];",
+                  "if (!Array.isArray(items) || items.length === 0) { console.log('Limpar Disciplinas: nada para deletar'); return; }",
+                  "console.log('Limpar Disciplinas: deletando', items.length, 'registros');",
+                  "const del = (i) => { if (i >= items.length) return; pm.sendRequest({ url: base + '/v1/disciplines/' + items[i].id, method: 'DELETE', header: { Authorization: 'Bearer ' + token } }, () => del(i+1)); };",
+                  "del(0);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{base_ms03}}/v1/disciplines"
+          }
+        },
+        {
+          "name": "Limpar Calendário",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const token = pm.collectionVariables.get('token');",
+                  "const base = pm.collectionVariables.get('base_ms03');",
+                  "const json = pm.response.json();",
+                  "const items = Array.isArray(json) ? json : [];",
+                  "if (!Array.isArray(items) || items.length === 0) { console.log('Limpar Calendário: nada para deletar'); return; }",
+                  "console.log('Limpar Calendário: deletando', items.length, 'registros');",
+                  "const del = (i) => { if (i >= items.length) return; pm.sendRequest({ url: base + '/v1/calendar/events/' + items[i].id, method: 'DELETE', header: { Authorization: 'Bearer ' + token } }, () => del(i+1)); };",
+                  "del(0);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{base_ms03}}/v1/calendar/events"
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔐 Auth Service",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "url": "{{base_auth}}/health",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Service ok', () => pm.expect(pm.response.json().status).to.eql('ok'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login — Admin",
+          "request": {
+            "method": "POST",
+            "url": "{{base_auth}}/v1/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"admin@escola.com\",\"senha\":\"Admin@123\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('accessToken presente', () => pm.expect(json.accessToken).to.be.a('string').and.to.include('eyJ'));",
+                  "pm.test('role ADMIN', () => pm.expect(json.role).to.eql('ADMIN'));",
+                  "pm.collectionVariables.set('token', json.accessToken);",
+                  "pm.collectionVariables.set('refreshToken', json.refreshToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "url": "{{base_auth}}/v1/auth/refresh",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"refreshToken\":\"{{refreshToken}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Novo accessToken retornado', () => pm.expect(json.accessToken).to.be.a('string'));",
+                  "pm.collectionVariables.set('token', json.accessToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Validar Token",
+          "request": {
+            "method": "GET",
+            "url": "{{base_auth}}/v1/auth/validate"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('valid: true', () => pm.expect(json.valid).to.be.true);",
+                  "pm.test('role presente', () => pm.expect(json.user.role).to.eql('ADMIN'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Erro — Senha incorreta (401)",
+          "request": {
+            "method": "POST",
+            "url": "{{base_auth}}/v1/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"admin@escola.com\",\"senha\":\"senha_errada\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 401', () => pm.response.to.have.status(401));",
+                  "pm.test('Mensagem de erro', () => pm.expect(pm.response.json().error).to.include('inválidas'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Erro — Refresh token inválido (401)",
+          "request": {
+            "method": "POST",
+            "url": "{{base_auth}}/v1/auth/refresh",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"refreshToken\":\"token.invalido.aqui\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Erro — Refresh sem body (400)",
+          "request": {
+            "method": "POST",
+            "url": "{{base_auth}}/v1/auth/refresh",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "📚 MS-03 Turmas e Disciplinas",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "url": "{{base_ms03}}/health",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Service ok', () => pm.expect(pm.response.json().status).to.eql('ok'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Criar Disciplina — Matemática",
+          "request": {
+            "method": "POST",
+            "url": "{{base_ms03}}/v1/disciplines",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nome\":\"Matemática\",\"carga_horaria\":80}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "const json = pm.response.json();",
+                  "pm.test('ID retornado', () => pm.expect(json.id).to.be.a('string'));",
+                  "pm.test('Nome correto', () => pm.expect(json.nome).to.eql('Matemática'));",
+                  "pm.collectionVariables.set('ID_DISCIPLINA', json.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Criar Disciplina — Português",
+          "request": {
+            "method": "POST",
+            "url": "{{base_ms03}}/v1/disciplines",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nome\":\"Português\",\"carga_horaria\":60}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar Disciplinas",
+          "request": {
+            "method": "GET",
+            "url": "{{base_ms03}}/v1/disciplines"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('É um array', () => pm.expect(pm.response.json()).to.be.an('array'));",
+                  "pm.test('Pelo menos 2 disciplinas', () => pm.expect(pm.response.json().length).to.be.gte(2));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Buscar Disciplina por ID",
+          "request": {
+            "method": "GET",
+            "url": "{{base_ms03}}/v1/disciplines/{{ID_DISCIPLINA}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Nome correto', () => pm.expect(pm.response.json().nome).to.eql('Matemática'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Editar Disciplina",
+          "request": {
+            "method": "PUT",
+            "url": "{{base_ms03}}/v1/disciplines/{{ID_DISCIPLINA}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"carga_horaria\":100}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Carga horária atualizada', () => pm.expect(pm.response.json().carga_horaria).to.eql(100));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Erro — Disciplina inexistente (404)",
+          "request": {
+            "method": "GET",
+            "url": "{{base_ms03}}/v1/disciplines/id-invalido-que-nao-existe"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Criar Evento — Feriado Tiradentes",
+          "request": {
+            "method": "POST",
+            "url": "{{base_ms03}}/v1/calendar/events",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"data\":\"{{CALENDARIO_DATA}}\",\"descricao\":\"Tiradentes — Feriado Nacional\",\"tipo\":\"FERIADO\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "var ts = Date.now();",
+                  "var year = 2060 + (ts % 30);",
+                  "var month = String((ts % 12) + 1).padStart(2, '0');",
+                  "var day = String((ts % 28) + 1).padStart(2, '0');",
+                  "pm.collectionVariables.set('CALENDARIO_DATA', year + '-' + month + '-' + day);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "const json = pm.response.json();",
+                  "pm.test('ID retornado', () => pm.expect(json.id).to.be.a('string'));",
+                  "pm.collectionVariables.set('ID_CALENDARIO', json.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar Eventos",
+          "request": {
+            "method": "GET",
+            "url": "{{base_ms03}}/v1/calendar/events"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('É um array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Filtrar Eventos por Tipo",
+          "request": {
+            "method": "GET",
+            "url": "{{base_ms03}}/v1/calendar/events?tipo=FERIADO"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Todos são FERIADO', () => json.forEach(e => pm.expect(e.tipo).to.eql('FERIADO')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Filtrar Eventos por Período",
+          "request": {
+            "method": "GET",
+            "url": "{{base_ms03}}/v1/calendar/events?data_inicio=2026-04-01&data_fim=2030-12-31"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Editar Evento",
+          "request": {
+            "method": "PUT",
+            "url": "{{base_ms03}}/v1/calendar/events/{{ID_CALENDARIO}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"descricao\":\"Tiradentes (feriado nacional)\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Criar Turma 3A-2026",
+          "request": {
+            "method": "POST",
+            "url": "{{base_ms03}}/v1/classes",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"codigo\":\"{{TURMA_CODIGO}}\",\"ano_letivo\":2026,\"turno\":\"NOITE\",\"calendario_id\":\"{{ID_CALENDARIO}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.collectionVariables.set('TURMA_CODIGO', '3A-' + new Date().getFullYear() + '-' + Date.now().toString().slice(-4));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "const json = pm.response.json();",
+                  "pm.test('ID retornado', () => pm.expect(json.id).to.be.a('string'));",
+                  "pm.test('Código correto', () => pm.expect(json.codigo).to.eql(pm.collectionVariables.get('TURMA_CODIGO')));",
+                  "pm.collectionVariables.set('ID_TURMA', json.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar Turmas",
+          "request": {
+            "method": "GET",
+            "url": "{{base_ms03}}/v1/classes?ano_letivo=2026"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Tem campo data', () => pm.expect(pm.response.json()).to.have.property('data'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Contar Turmas Ativas",
+          "request": {
+            "method": "GET",
+            "url": "{{base_ms03}}/v1/classes/active/count"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('total >= 1', () => pm.expect(pm.response.json().total).to.be.gte(1));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Buscar Turma por ID",
+          "request": {
+            "method": "GET",
+            "url": "{{base_ms03}}/v1/classes/{{ID_TURMA}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Código correto', () => pm.expect(pm.response.json().codigo).to.eql(pm.collectionVariables.get('TURMA_CODIGO')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Editar Turma",
+          "request": {
+            "method": "PUT",
+            "url": "{{base_ms03}}/v1/classes/{{ID_TURMA}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"turno\":\"TARDE\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Turno atualizado', () => pm.expect(pm.response.json().turno).to.eql('TARDE'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Erro — Código duplicado (409)",
+          "request": {
+            "method": "POST",
+            "url": "{{base_ms03}}/v1/classes",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"codigo\":\"3A-2026\",\"ano_letivo\":2026,\"turno\":\"MANHA\",\"calendario_id\":\"{{ID_CALENDARIO}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "👨‍🏫 MS-02 Professores",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "url": "{{base_ms02}}/health",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Service ok', () => pm.expect(pm.response.json().status).to.eql('ok'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Criar Professor — Maria Oliveira",
+          "request": {
+            "method": "POST",
+            "url": "{{base_ms02}}/v1/teachers",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nome_completo\":\"Maria Oliveira\",\"email\":\"{{PROF1_EMAIL}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "var ts = Date.now();",
+                  "pm.collectionVariables.set('PROF1_EMAIL', 'maria.' + ts + '@escola.com');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var resJson = pm.response.json();",
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "pm.test('ID retornado', () => pm.expect(resJson.id).to.be.a('string'));",
+                  "pm.collectionVariables.set('ID_PROFESSOR', resJson.id || '');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Criar Professor 2 — Carlos Souza",
+          "request": {
+            "method": "POST",
+            "url": "{{base_ms02}}/v1/teachers",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nome_completo\":\"Carlos Souza\",\"email\":\"{{PROF2_EMAIL}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "var ts = Date.now();",
+                  "pm.collectionVariables.set('PROF2_EMAIL', 'carlos.' + ts + '@escola.com');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('ID_PROFESSOR_2', pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar Professores",
+          "request": {
+            "method": "GET",
+            "url": "{{base_ms02}}/v1/teachers"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Tem campo data', () => pm.expect(pm.response.json()).to.have.property('data'));",
+                  "pm.test('Pelo menos 2 professores', () => pm.expect(pm.response.json().data.length).to.be.gte(2));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Contar Professores",
+          "request": {
+            "method": "GET",
+            "url": "{{base_ms02}}/v1/teachers/count"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('total >= 1', () => pm.expect(pm.response.json().total).to.be.gte(1));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Buscar Professor por ID",
+          "request": {
+            "method": "GET",
+            "url": "{{base_ms02}}/v1/teachers/{{ID_PROFESSOR}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Nome correto', () => pm.expect(pm.response.json().nome_completo).to.eql('Maria Oliveira'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Editar Professor",
+          "request": {
+            "method": "PUT",
+            "url": "{{base_ms02}}/v1/teachers/{{ID_PROFESSOR}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nome_completo\":\"Maria Oliveira Santos\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Nome atualizado', () => pm.expect(pm.response.json().nome_completo).to.eql('Maria Oliveira Santos'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Erro — E-mail duplicado (409)",
+          "request": {
+            "method": "POST",
+            "url": "{{base_ms02}}/v1/teachers",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nome_completo\":\"Clone\",\"email\":\"maria.oliveira@escola.com\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Criar Entrada na Grade",
+          "request": {
+            "method": "POST",
+            "url": "{{base_ms02}}/v1/teachers/{{ID_PROFESSOR}}/schedule",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"turma_id\":\"{{ID_TURMA}}\",\"disciplina_id\":\"{{ID_DISCIPLINA}}\",\"bimestre\":1,\"ano_letivo\":2026,\"dia_semana\":\"SEGUNDA\",\"horario_inicio\":\"19:00:00\",\"horario_fim\":\"20:40:00\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "const json = pm.response.json();",
+                  "pm.test('ID retornado', () => pm.expect(json.id).to.be.a('string'));",
+                  "pm.collectionVariables.set('ID_GRADE', json.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Consultar Grade do Professor",
+          "request": {
+            "method": "GET",
+            "url": "{{base_ms02}}/v1/teachers/{{ID_PROFESSOR}}/schedule?bimestre=1&ano_letivo=2026"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('É um array', () => pm.expect(pm.response.json()).to.be.an('array'));",
+                  "pm.test('Pelo menos 1 entrada', () => pm.expect(pm.response.json().length).to.be.gte(1));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Editar Entrada da Grade",
+          "request": {
+            "method": "PUT",
+            "url": "{{base_ms02}}/v1/teachers/{{ID_PROFESSOR}}/schedule/{{ID_GRADE}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"horario_inicio\":\"19:30:00\",\"horario_fim\":\"21:10:00\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Registrar Substituição",
+          "request": {
+            "method": "POST",
+            "url": "{{base_ms02}}/v1/teachers/{{ID_PROFESSOR}}/schedule/{{ID_GRADE}}/substitution",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"professor_substituto_id\":\"{{ID_PROFESSOR_2}}\",\"motivo\":\"Atestado médico\",\"data_inicio\":\"2026-04-14\",\"data_fim\":\"2026-04-18\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Motivo correto', () => pm.expect(pm.response.json().motivo).to.eql('Atestado médico'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Feed de Alterações Recentes",
+          "request": {
+            "method": "GET",
+            "url": "{{base_ms02}}/v1/teachers/schedule/changes/recent",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('É um array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "🎓 MS-01 Alunos",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "url": "{{base_ms01}}/health",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Service ok', () => pm.expect(pm.response.json().status).to.eql('ok'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Criar Aluno — João da Silva",
+          "request": {
+            "method": "POST",
+            "url": "{{base_ms01}}/v1/students",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nome_completo\":\"João da Silva\",\"data_nascimento\":\"2008-03-15\",\"email\":\"{{ALUNO_EMAIL}}\",\"cpf\":\"{{ALUNO_CPF}}\",\"telefone\":\"(21) 99999-0001\",\"end_logradouro\":\"Rua das Flores\",\"end_numero\":\"42\",\"end_bairro\":\"Centro\",\"end_cidade\":\"Rio de Janeiro\",\"end_estado\":\"RJ\",\"end_cep\":\"20000-000\",\"turma_atual_id\":\"{{ID_TURMA}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "var ts = Date.now();",
+                  "pm.collectionVariables.set('ALUNO_EMAIL', 'joao.' + ts + '@aluno.escola.com');",
+                  "var n = String(ts).slice(-9);",
+                  "var cpf = n.slice(0,3) + '.' + n.slice(3,6) + '.' + n.slice(6,9) + '-00';",
+                  "pm.collectionVariables.set('ALUNO_CPF', cpf);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var resJson = pm.response.json();",
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "pm.test('ID retornado', () => pm.expect(resJson.id).to.be.a('string'));",
+                  "pm.test('Matrícula gerada', () => pm.expect(resJson.matricula).to.include('MAT-'));",
+                  "pm.test('Status ATIVO', () => pm.expect(resJson.status).to.eql('ATIVO'));",
+                  "pm.collectionVariables.set('ID_ALUNO', resJson.id || '');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar Alunos",
+          "request": {
+            "method": "GET",
+            "url": "{{base_ms01}}/v1/students"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Filtrar Alunos por Status",
+          "request": {
+            "method": "GET",
+            "url": "{{base_ms01}}/v1/students?status=ATIVO"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Contar Alunos",
+          "request": {
+            "method": "GET",
+            "url": "{{base_ms01}}/v1/students/count"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('total >= 1', () => pm.expect(pm.response.json().total).to.be.gte(1));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Buscar Aluno por ID",
+          "request": {
+            "method": "GET",
+            "url": "{{base_ms01}}/v1/students/{{ID_ALUNO}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Nome correto', () => pm.expect(pm.response.json().nome_completo).to.eql('João da Silva'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Editar Aluno",
+          "request": {
+            "method": "PUT",
+            "url": "{{base_ms01}}/v1/students/{{ID_ALUNO}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"telefone\":\"(21) 88888-0001\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Telefone atualizado', () => pm.expect(pm.response.json().telefone).to.eql('(21) 88888-0001'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Inativar Aluno (soft delete)",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base_ms01}}/v1/students/{{ID_ALUNO}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Verificar Status INATIVO",
+          "request": {
+            "method": "GET",
+            "url": "{{base_ms01}}/v1/students/{{ID_ALUNO}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Status INATIVO', () => pm.expect(pm.response.json().status).to.eql('INATIVO'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reativar Aluno",
+          "request": {
+            "method": "PUT",
+            "url": "{{base_ms01}}/v1/students/{{ID_ALUNO}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"status\":\"ATIVO\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Status ATIVO', () => pm.expect(pm.response.json().status).to.eql('ATIVO'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Alocar Aluno na Turma (via MS-03)",
+          "request": {
+            "method": "POST",
+            "url": "{{base_ms03}}/v1/classes/{{ID_TURMA}}/students",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"aluno_id\":\"{{ID_ALUNO}}\",\"data_matricula\":\"2026-02-03\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Erro — Alocar Aluno Duplicado (409)",
+          "request": {
+            "method": "POST",
+            "url": "{{base_ms03}}/v1/classes/{{ID_TURMA}}/students",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"aluno_id\":\"{{ID_ALUNO}}\",\"data_matricula\":\"2026-02-03\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Lançar Presença",
+          "request": {
+            "method": "POST",
+            "url": "{{base_ms01}}/v1/students/{{ID_ALUNO}}/frequency",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"disciplina_id\":\"{{ID_DISCIPLINA}}\",\"turma_id\":\"{{ID_TURMA}}\",\"data\":\"2026-04-07\",\"presente\":true,\"bimestre\":1}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "pm.test('presente: true', () => pm.expect(pm.response.json().presente).to.be.true);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Lançar Falta",
+          "request": {
+            "method": "POST",
+            "url": "{{base_ms01}}/v1/students/{{ID_ALUNO}}/frequency",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"disciplina_id\":\"{{ID_DISCIPLINA}}\",\"turma_id\":\"{{ID_TURMA}}\",\"data\":\"2026-04-08\",\"presente\":false,\"bimestre\":1}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "pm.test('presente: false', () => pm.expect(pm.response.json().presente).to.be.false);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Consultar Frequência Consolidada",
+          "request": {
+            "method": "GET",
+            "url": "{{base_ms01}}/v1/students/{{ID_ALUNO}}/frequency?bimestre=1"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('É um array', () => pm.expect(pm.response.json()).to.be.an('array'));",
+                  "var arr = pm.response.json();",
+                  "var freq0 = arr[0];",
+                  "pm.test('total_aulas >= 2', () => pm.expect(freq0.total_aulas).to.be.gte(2));",
+                  "pm.test('percentual calculado', () => pm.expect(parseFloat(freq0.percentual)).to.be.a('number'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Override de Reprovação por Falta",
+          "request": {
+            "method": "POST",
+            "url": "{{base_ms01}}/v1/students/{{ID_ALUNO}}/frequency/override",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"disciplina_id\":\"{{ID_DISCIPLINA}}\",\"justificativa\":\"Aluno apresentou atestado médico para todas as faltas\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Histórico Escolar",
+          "request": {
+            "method": "GET",
+            "url": "{{base_ms01}}/v1/students/{{ID_ALUNO}}/history"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "📝 MS-04 Avaliações e Notas",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "url": "{{base_ms04}}/health",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Service ok', () => pm.expect(pm.response.json().status).to.eql('ok'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Consultar Média Mínima",
+          "request": {
+            "method": "GET",
+            "url": "{{base_ms04}}/v1/grades/config"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('media_min_aprovacao presente', () => pm.expect(pm.response.json()).to.have.property('media_min_aprovacao'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Alterar Média Mínima para 5.5",
+          "request": {
+            "method": "PUT",
+            "url": "{{base_ms04}}/v1/grades/config",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"media_min_aprovacao\":5.5}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Restaurar Média Mínima para 6.0",
+          "request": {
+            "method": "PUT",
+            "url": "{{base_ms04}}/v1/grades/config",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"media_min_aprovacao\":6.0}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Criar Prova 1 — Álgebra",
+          "request": {
+            "method": "POST",
+            "url": "{{base_ms04}}/v1/assessments",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"titulo\":\"Prova 1 — Álgebra\",\"tipo\":\"PROVA\",\"bimestre\":1,\"ano_letivo\":2026,\"disciplina_id\":\"{{ID_DISCIPLINA}}\",\"turma_id\":\"{{ID_TURMA}}\",\"professor_id\":\"{{ID_PROFESSOR}}\",\"data_aplicacao\":\"2026-04-20\",\"peso_na_media\":1.0}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "const json = pm.response.json();",
+                  "pm.test('ID retornado', () => pm.expect(json.id).to.be.a('string'));",
+                  "pm.collectionVariables.set('ID_PROVA1', json.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Criar Trabalho 1 — Geometria",
+          "request": {
+            "method": "POST",
+            "url": "{{base_ms04}}/v1/assessments",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"titulo\":\"Trabalho em Grupo — Geometria\",\"tipo\":\"TRABALHO\",\"bimestre\":1,\"ano_letivo\":2026,\"disciplina_id\":\"{{ID_DISCIPLINA}}\",\"turma_id\":\"{{ID_TURMA}}\",\"professor_id\":\"{{ID_PROFESSOR}}\",\"data_aplicacao\":\"2026-04-25\",\"peso_na_media\":1.0}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('ID_TRABALHO1', pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Criar Avaliação de Recuperação",
+          "request": {
+            "method": "POST",
+            "url": "{{base_ms04}}/v1/assessments",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"titulo\":\"Recuperação — 1º Bimestre\",\"tipo\":\"RECUPERACAO\",\"bimestre\":1,\"ano_letivo\":2026,\"disciplina_id\":\"{{ID_DISCIPLINA}}\",\"turma_id\":\"{{ID_TURMA}}\",\"professor_id\":\"{{ID_PROFESSOR}}\",\"data_aplicacao\":\"2026-05-10\",\"peso_na_media\":1.0}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('ID_RECUPERACAO', pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar Avaliações",
+          "request": {
+            "method": "GET",
+            "url": "{{base_ms04}}/v1/assessments?bimestre=1&ano_letivo=2026"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Buscar Avaliação por ID",
+          "request": {
+            "method": "GET",
+            "url": "{{base_ms04}}/v1/assessments/{{ID_PROVA1}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Titulo correto', () => pm.expect(pm.response.json().titulo).to.include('Álgebra'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Editar Avaliação",
+          "request": {
+            "method": "PUT",
+            "url": "{{base_ms04}}/v1/assessments/{{ID_PROVA1}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"data_aplicacao\":\"2026-04-22\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Lançar Nota — Prova (7.5)",
+          "request": {
+            "method": "POST",
+            "url": "{{base_ms04}}/v1/grades",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"avaliacao_id\":\"{{ID_PROVA1}}\",\"aluno_id\":\"{{ID_ALUNO}}\",\"valor\":7.5}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "const json = pm.response.json();",
+                  "pm.test('Valor correto', () => pm.expect(parseFloat(json.valor)).to.eql(7.5));",
+                  "pm.collectionVariables.set('ID_NOTA', json.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Lançar Nota — Trabalho (8.0)",
+          "request": {
+            "method": "POST",
+            "url": "{{base_ms04}}/v1/grades",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"avaliacao_id\":\"{{ID_TRABALHO1}}\",\"aluno_id\":\"{{ID_ALUNO}}\",\"valor\":8.0}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Boletim — Verificar Média 7.75",
+          "request": {
+            "method": "GET",
+            "url": "{{base_ms04}}/v1/grades/{{ID_ALUNO}}/boletim"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('medias_bimestrais presente', () => pm.expect(json.medias_bimestrais).to.be.an('array'));",
+                  "const media = json.medias_bimestrais.find(m => m.bimestre === 1);",
+                  "pm.test('Média bimestral existe', () => pm.expect(media).to.not.be.undefined);",
+                  "pm.test('Média calculada ~7.75', () => pm.expect(parseFloat(media.valor_calculado)).to.be.closeTo(7.75, 0.1));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Feed de Notas Recentes",
+          "request": {
+            "method": "GET",
+            "url": "{{base_ms04}}/v1/grades/recent"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('É um array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Editar Nota (valor → 9.0)",
+          "request": {
+            "method": "PUT",
+            "url": "{{base_ms04}}/v1/grades/{{ID_NOTA}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"valor\":9.0}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Novo valor 9.0', () => pm.expect(parseFloat(pm.response.json().valor)).to.eql(9.0));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Erro — Nota duplicada (409)",
+          "request": {
+            "method": "POST",
+            "url": "{{base_ms04}}/v1/grades",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"avaliacao_id\":\"{{ID_PROVA1}}\",\"aluno_id\":\"{{ID_ALUNO}}\",\"valor\":5.0}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Lançar Nota de Recuperação (8.5)",
+          "request": {
+            "method": "POST",
+            "url": "{{base_ms04}}/v1/grades",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"avaliacao_id\":\"{{ID_RECUPERACAO}}\",\"aluno_id\":\"{{ID_ALUNO}}\",\"valor\":8.5}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Boletim — Verificar Recuperação Aplicada",
+          "request": {
+            "method": "GET",
+            "url": "{{base_ms04}}/v1/grades/{{ID_ALUNO}}/boletim"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "const media = json.medias_bimestrais.find(m => m.bimestre === 1);",
+                  "pm.test('Média bimestral existe', () => pm.expect(media).to.not.be.undefined);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Lançar Nota de Prova Final",
+          "request": {
+            "method": "POST",
+            "url": "{{base_ms04}}/v1/grades/prova-final",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"aluno_id\":\"{{ID_ALUNO}}\",\"disciplina_id\":\"{{ID_DISCIPLINA}}\",\"ano_letivo\":2026,\"nota_prova_final\":7.0}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 2xx ou 400 (sem elegibilidade)', () => {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 201, 400]);",
+                  "});",
+                  "if (pm.response.code !== 400) {",
+                  "  const json = pm.response.json();",
+                  "  pm.test('media_final calculada', () => pm.expect(json.media_final).to.exist);",
+                  "  pm.test('status definido', () => pm.expect(['APROVADO_PF','REPROVADO_NOTA']).to.include(json.status));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "📣 MS-05 Comunicação Escolar",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "url": "{{base_ms05}}/health",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Service ok', () => pm.expect(pm.response.json().status).to.eql('ok'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Consultar Preferências",
+          "request": {
+            "method": "GET",
+            "url": "{{base_ms05}}/v1/notifications/preferences"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('email_obrigatorio presente', () => pm.expect(json).to.have.property('email_obrigatorio'));",
+                  "pm.test('whatsapp_opcional presente', () => pm.expect(json).to.have.property('whatsapp_opcional'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Atualizar Preferências",
+          "request": {
+            "method": "PUT",
+            "url": "{{base_ms05}}/v1/notifications/preferences",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email_obrigatorio\":true,\"whatsapp_opcional\":true}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('whatsapp_opcional: true', () => pm.expect(pm.response.json().whatsapp_opcional).to.be.true);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Criar Comunicado GERAL",
+          "request": {
+            "method": "POST",
+            "url": "{{base_ms05}}/v1/communications",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"titulo\":\"Reunião de pais e mestres\",\"conteudo\":\"Informamos que a reunião será realizada no dia 20/05 às 19h no auditório principal. Presença obrigatória.\",\"publico_alvo\":\"GERAL\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "const json = pm.response.json();",
+                  "pm.test('ID retornado', () => pm.expect(json.id).to.be.a('string'));",
+                  "pm.test('publico_alvo GERAL', () => pm.expect(json.publico_alvo).to.eql('GERAL'));",
+                  "pm.collectionVariables.set('ID_COMUNICADO', json.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Criar Comunicado TODOS_PROFESSORES",
+          "request": {
+            "method": "POST",
+            "url": "{{base_ms05}}/v1/communications",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"titulo\":\"Entrega de diários\",\"conteudo\":\"Lembramos que o prazo para entrega dos diários de classe é dia 30/05.\",\"publico_alvo\":\"TODOS_PROFESSORES\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Criar Comunicado TURMA_ESPECIFICA",
+          "request": {
+            "method": "POST",
+            "url": "{{base_ms05}}/v1/communications",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"titulo\":\"Aviso de prova — Turma 3A\",\"conteudo\":\"Haverá prova de Matemática na próxima segunda-feira.\",\"publico_alvo\":\"TURMA_ESPECIFICA\",\"turma_id\":\"{{ID_TURMA}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Criar Comunicado LISTA_MANUAL",
+          "request": {
+            "method": "POST",
+            "url": "{{base_ms05}}/v1/communications",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"titulo\":\"Convocação especial\",\"conteudo\":\"Você foi selecionado para participar do conselho de classe.\",\"publico_alvo\":\"LISTA_MANUAL\",\"destinatarios\":[\"{{ID_ALUNO}}\"]}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar Comunicados",
+          "request": {
+            "method": "GET",
+            "url": "{{base_ms05}}/v1/communications"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('É um array', () => pm.expect(pm.response.json()).to.be.an('array'));",
+                  "pm.test('Pelo menos 1 comunicado', () => pm.expect(pm.response.json().length).to.be.gte(1));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Feed de Comunicados Recentes",
+          "request": {
+            "method": "GET",
+            "url": "{{base_ms05}}/v1/communications/recent"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('É um array', () => pm.expect(pm.response.json()).to.be.an('array'));",
+                  "pm.test('Máximo 20 registros', () => pm.expect(pm.response.json().length).to.be.lte(20));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Contagem de Não Lidos",
+          "request": {
+            "method": "GET",
+            "url": "{{base_ms05}}/v1/communications/unread"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('total presente', () => pm.expect(pm.response.json()).to.have.property('total'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Buscar Comunicado por ID",
+          "request": {
+            "method": "GET",
+            "url": "{{base_ms05}}/v1/communications/{{ID_COMUNICADO}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Título correto', () => pm.expect(pm.response.json().titulo).to.include('Reunião'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Marcar Comunicado como Lido",
+          "request": {
+            "method": "PUT",
+            "url": "{{base_ms05}}/v1/communications/{{ID_COMUNICADO}}/read"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 ou 404 (não é destinatário direto)', () => {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 404]);",
+                  "});",
+                  "if (pm.response.code === 200) {",
+                  "  pm.test('success: true', () => pm.expect(pm.response.json().success).to.be.true);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

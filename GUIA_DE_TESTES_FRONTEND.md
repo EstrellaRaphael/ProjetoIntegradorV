@@ -154,14 +154,26 @@ npm run dev --prefix MS05_comunicacao_escolar
 
 ## 4. Acessando o sistema no navegador
 
-Com todos os serviços rodando, abra o navegador e acesse:
+### Via Docker Compose (recomendado para apresentação)
+
+Com os containers rodando (`docker compose up -d`), acesse:
+
+```
+http://localhost
+```
+
+O frontend é servido pelo nginx na porta 80 com SPA routing correto — recarregar a página em qualquer rota funciona normalmente.
+
+### Via Vite (desenvolvimento)
+
+Com os 7 terminais rodando (seção 3), acesse:
 
 ```
 http://localhost:5173
 ```
 
 **O que deve acontecer:**
-- Se você ainda não está logado → a página redireciona automaticamente para `http://localhost:5173/login`
+- Se você ainda não está logado → a página redireciona automaticamente para `/login`
 - Se já estava logado em uma sessão anterior → vai direto para o Dashboard
 
 ---
@@ -183,15 +195,15 @@ A tela de login exibe:
 
 ### 5.2 Credenciais de teste
 
-Use as credenciais cadastradas no banco de dados. O usuário `ADMIN` é criado pelo `auth-service`. Exemplo típico:
+As credenciais padrão para demonstração do sistema são:
 
 | Perfil | E-mail | Senha |
 |---|---|---|
-| ADMIN | `admin@escola.com` | `admin123` |
-| PROFESSOR | *(depende do cadastro)* | *(definida via SQL)* |
-| ALUNO | *(depende do cadastro)* | *(definida via SQL)* |
+| ADMIN | `admin@escola.com` | `Admin@123` |
+| PROFESSOR | `professor@escola.com` | `Prof@123` |
+| ALUNO | `aluno@escola.com` | `Aluno@123` |
 
-> Consulte a seção 13 do **GUIA_DE_TESTES.md** para ver como criar usuários Professor e Aluno diretamente no banco de dados.
+> **Importante:** as contas de PROFESSOR e ALUNO são vinculadas ao professor e ao aluno mais recentes cadastrados no banco. Se o banco foi limpo e repopulado (ex.: nova execução da collection Postman), execute o script `create_demo_users.js` para recriar os vínculos — veja seção 13 do **GUIA_DE_TESTES.md**.
 
 ### 5.3 Testando o login com ADMIN
 
@@ -245,9 +257,14 @@ Após o login, toda a navegação usa um layout com:
 
 ### 6.2 Topbar (barra superior)
 
-- Título da seção atual à esquerda
-- **Ícone de sino** (notificações) à direita
-- Nome do usuário logado e seu perfil (ADMIN / PROFESSOR / ALUNO)
+- Título "Gestão Escolar" à esquerda
+- **Ícone de sino** (notificações) à direita — ao clicar navega para `/communications`
+- Badge vermelho no sino indica a quantidade de comunicados não lidos
+- **Nome do usuário logado** exibido ao lado do avatar:
+  - ADMIN → "Administrador"
+  - PROFESSOR → nome completo buscado do MS-02
+  - ALUNO → nome completo buscado do MS-01
+- Perfil do usuário exibido abaixo do nome (ADMIN / PROFESSOR / ALUNO)
 
 ### 6.3 Área de conteúdo
 
@@ -277,18 +294,20 @@ O dashboard do admin exibe **4 cards de estatísticas** em linha (ou 2×2 em tel
 ### 7.2 Tabela de Notas Recentes
 
 - Localizada abaixo dos cards, ocupando 2/3 da largura
-- Exibe colunas: **Aluno ID**, **Avaliação ID**, **Nota**, **Data**
-- Os IDs são truncados com `…` (mostra apenas os 8 primeiros caracteres do UUID)
+- Exibe colunas: **Avaliação**, **Tipo**, **BIM**, **Nota**, **Data**
+- A coluna **Avaliação** mostra o título da avaliação (ex.: "Prova de Matemática")
+- A coluna **Tipo** exibe um badge colorido: PROVA (azul), TRABALHO (roxo), RECUPERACAO (amarelo)
 - A nota é colorida:
   - 🟢 **Verde** (`badge-success`) → nota ≥ 7,0
   - 🟡 **Amarelo** (`badge-warning`) → nota entre 5,0 e 6,9
   - 🔴 **Vermelho** (`badge-danger`) → nota < 5,0
 
-**Como validar as cores das notas:**
+**Como validar:**
 1. Certifique-se de que há notas lançadas no sistema (via MS-04)
-2. Notas como 8,0 devem aparecer com badge verde
-3. Notas como 5,5 devem aparecer com badge amarelo
-4. Notas como 3,0 devem aparecer com badge vermelho
+2. Confirme que o título da avaliação aparece em vez de UUIDs truncados
+3. Notas como 8,0 devem aparecer com badge verde
+4. Notas como 5,5 devem aparecer com badge amarelo
+5. Notas como 3,0 devem aparecer com badge vermelho
 
 ### 7.3 Ações Rápidas
 
@@ -955,7 +974,17 @@ SELECT email, role FROM users;
 
 ---
 
-### ❌ Página mostra "404 — Página não encontrada"
+### ❌ Página mostra "404 Not Found" ao atualizar (F5) no Docker
+
+**Causa provável:** O nginx não estava configurado para redirecionar todas as rotas para o `index.html` (comportamento obrigatório em SPAs).
+
+**Situação:** Corrigida. O arquivo `frontend/nginx.conf` com `try_files $uri $uri/ /index.html` já está incluso na imagem Docker. Recarregar a página em qualquer rota (ex.: `/dashboard`, `/students/123`) funciona normalmente.
+
+**Se ainda ocorrer:** Reconstrua a imagem Docker do frontend com `docker compose build --no-cache frontend && docker compose up -d frontend`.
+
+---
+
+### ❌ Página mostra "404 — Página não encontrada" (recurso inexistente)
 
 **Causa provável:** Você acessou uma URL inválida.
 

@@ -136,7 +136,7 @@ ProjetoIntegradorV/
 ├── MS04_avaliacoes_e_notas/         ← porta 3004 (tem services/nota.service.ts)
 ├── MS05_comunicacao_escolar/        ← porta 3005
 │
-├── frontend/                        ← React SPA (porta 5173)
+├── frontend/                        ← React SPA (porta 5173 dev / 80 Docker)
 │   ├── src/
 │   │   ├── components/layout/       ← AppLayout, Sidebar, Topbar
 │   │   ├── components/ui/           ← Modal, ConfirmDialog, EmptyState, Pagination
@@ -145,12 +145,15 @@ ProjetoIntegradorV/
 │   │   ├── store/authStore.ts       ← Zustand: tokens JWT, user, login, logout
 │   │   ├── types/index.ts           ← Tipos TypeScript de todos os domínios
 │   │   └── router.tsx               ← Rotas + guard RequireAuth
+│   ├── nginx.conf                   ← SPA routing (try_files → index.html)
 │   ├── stitch/                      ← Design de referência (AI Stitch)
 │   ├── tailwind.config.js           ← Tokens de cor do design system
 │   └── README.md
 │
+├── create_demo_users.js             ← Script para criar users professor@/aluno@ no auth-service
 ├── .claude/launch.json              ← Config de preview para todos os servidores
-└── GUIA_DE_TESTES.md                ← Guia completo de execução e testes
+├── GUIA_DE_TESTES.md                ← Guia completo de execução e testes (APIs)
+└── GUIA_DE_TESTES_FRONTEND.md       ← Guia completo de testes do frontend
 ```
 
 ---
@@ -200,6 +203,23 @@ O script cria a tabela `usuario` e insere um admin padrão:
 
 > Altere a senha do admin após o primeiro login.
 
+### Credenciais de Demo
+
+Após popular o banco (via collection Postman ou inserção manual), execute o script abaixo para criar os usuários de demonstração de PROFESSOR e ALUNO, vinculados ao professor e aluno mais recentes do banco:
+
+```bash
+docker cp create_demo_users.js projetointegradorv-auth-service-1:/app/create_demo_users.js
+docker exec projetointegradorv-auth-service-1 node /app/create_demo_users.js
+```
+
+| Perfil | E-mail | Senha |
+|---|---|---|
+| ADMIN | `admin@escola.com` | `Admin@123` |
+| PROFESSOR | `professor@escola.com` | `Prof@123` |
+| ALUNO | `aluno@escola.com` | `Aluno@123` |
+
+> Execute o script novamente sempre que o banco for limpo e repopulado.
+
 ### 2. Instalar dependências de cada serviço
 
 ```bash
@@ -247,11 +267,21 @@ cd frontend                   && npm run dev # porta 5173
 ### Docker Compose
 
 ```bash
-# Na raiz do projeto
-docker-compose up
+# Na raiz do projeto — sobe todos os serviços
+docker compose up -d
+
+# Rebuild completo (após mudanças de código)
+docker compose build --no-cache && docker compose up -d
 
 # Apenas um serviço específico
-docker-compose up ms01-alunos
+docker compose up -d ms01-alunos
+```
+
+O frontend é servido pelo **nginx** na porta **80** com SPA routing (`try_files $uri $uri/ /index.html`), permitindo recarregar páginas sem 404:
+
+```
+http://localhost      ← frontend (Docker)
+http://localhost:5173 ← frontend (Vite dev)
 ```
 
 ### Health check de cada serviço

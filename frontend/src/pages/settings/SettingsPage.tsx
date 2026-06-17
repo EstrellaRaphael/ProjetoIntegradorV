@@ -86,7 +86,7 @@ export default function SettingsPage() {
                 </div>
               ) : (
                 <p className="text-2xl font-bold text-on-surface mt-1 tabular-nums">
-                  {config?.media_min_aprovacao?.toFixed(1).replace('.', ',') ?? '—'}
+                  {config?.media_min_aprovacao != null ? Number(config.media_min_aprovacao).toFixed(1).replace('.', ',') : '—'}
                 </p>
               )}
               {config?.vigente_desde && (
@@ -126,7 +126,7 @@ export default function SettingsPage() {
                 {history.map((h, i) => (
                   <tr key={h.id ?? i} className="tr-row">
                     <td className="td font-bold tabular-nums">
-                      {h.media_min_aprovacao.toFixed(1).replace('.', ',')}
+                      {Number(h.media_min_aprovacao).toFixed(1).replace('.', ',')}
                     </td>
                     <td className="td text-on-surface-variant">
                       {h.vigente_desde ? new Date(h.vigente_desde).toLocaleDateString('pt-BR') : '—'}

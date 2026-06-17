@@ -1505,7 +1505,29 @@ O worker tenta até 3 vezes com backoff exponencial (1min → 5min → 15min). C
 
 > **Por que isso é necessário?** O sistema não tem uma rota de cadastro de usuários via API (apenas login). Os usuários de acesso são criados via inserção direta no banco de dados do auth-service.
 
-Para testar as rotas que exigem login com role `PROFESSOR` ou `ALUNO`, siga os passos abaixo.
+### 13.0 Credenciais padrão (demo rápida)
+
+Se a collection Postman já foi executada (dados existem no banco), basta rodar o script de criação automática de demo users:
+
+```bash
+# Copiar o script para dentro do container e executar
+docker cp create_demo_users.js projetointegradorv-auth-service-1:/app/create_demo_users.js
+docker exec projetointegradorv-auth-service-1 node /app/create_demo_users.js
+```
+
+Isso cria (ou recria) as seguintes contas, vinculadas ao professor e aluno mais recentes do banco:
+
+| Perfil | E-mail | Senha |
+|---|---|---|
+| ADMIN | `admin@escola.com` | `Admin@123` |
+| PROFESSOR | `professor@escola.com` | `Prof@123` |
+| ALUNO | `aluno@escola.com` | `Aluno@123` |
+
+> ⚠️ Execute o script novamente sempre que o banco for limpo e repopulado, pois o `referencia_id` muda a cada execução da collection.
+
+---
+
+Para testar as rotas que exigem login com role `PROFESSOR` ou `ALUNO` manualmente (sem o script), siga os passos abaixo.
 
 ### 13.1 Gerar o hash da senha
 

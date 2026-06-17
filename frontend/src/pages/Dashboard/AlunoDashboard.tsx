@@ -7,11 +7,12 @@ function formatDate(str: string) {
   return new Date(str).toLocaleDateString('pt-BR')
 }
 
-function avgBadge(avg: number | undefined) {
-  if (avg === undefined) return <span className="badge badge-neutral">—</span>
-  if (avg >= 7) return <span className="badge badge-success">{avg.toFixed(1).replace('.', ',')}</span>
-  if (avg >= 5) return <span className="badge badge-warning">{avg.toFixed(1).replace('.', ',')}</span>
-  return <span className="badge badge-danger">{avg.toFixed(1).replace('.', ',')}</span>
+function avgBadge(avg: string | number | undefined) {
+  if (avg === undefined || avg === null) return <span className="badge badge-neutral">—</span>
+  const v = Number(avg)
+  if (v >= 7) return <span className="badge badge-success">{v.toFixed(1).replace('.', ',')}</span>
+  if (v >= 5) return <span className="badge badge-warning">{v.toFixed(1).replace('.', ',')}</span>
+  return <span className="badge badge-danger">{v.toFixed(1).replace('.', ',')}</span>
 }
 
 function StatusIcon({ value }: { value: number }) {
@@ -120,7 +121,7 @@ export default function AlunoDashboard() {
                 ) : (
                   disciplinas.map(([discId, bims]) => {
                     const getB = (b: number) => bims.find((m) => m.bimestre === b)
-                    const avg = bims.reduce((s, m) => s + m.valor_calculado, 0) / (bims.length || 1)
+                    const avg = bims.reduce((s, m) => s + Number(m.valor_calculado), 0) / (bims.length || 1)
                     return (
                       <tr key={discId} className="tr-row">
                         <td className="td font-medium">{discId.slice(0, 8)}…</td>

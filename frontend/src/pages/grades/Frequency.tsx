@@ -227,16 +227,16 @@ function AlunoFrequency() {
                     <td className="td text-center">{f.bimestre}º BIM</td>
                     <td className="td text-center">{f.total_aulas}</td>
                     <td className="td text-center text-success font-medium">{f.total_presencas}</td>
-                    <td className="td text-center text-error font-medium">{f.total_faltas}</td>
+                    <td className="td text-center text-error font-medium">{f.total_aulas - f.total_presencas}</td>
                     <td className="td text-center">
-                      <span className={`badge ${f.percentual_frequencia >= 75 ? 'badge-success' : 'badge-danger'}`}>
-                        {f.percentual_frequencia.toFixed(1)}%
+                      <span className={`badge ${Number(f.percentual) >= 75 ? 'badge-success' : 'badge-danger'}`}>
+                        {Number(f.percentual).toFixed(1)}%
                       </span>
                     </td>
                     <td className="td text-center">
                       {f.reprovado_por_falta ? (
                         <span className="badge badge-danger">Rep. por falta</span>
-                      ) : f.percentual_frequencia < 75 ? (
+                      ) : Number(f.percentual) < 75 ? (
                         <span className="badge badge-warning">Atenção</span>
                       ) : (
                         <span className="badge badge-success">Regular</span>

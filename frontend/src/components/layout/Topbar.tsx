@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
-import { communicationsService } from '../../services/api'
+import { useNavigate } from 'react-router-dom'
+import { communicationsService, studentsService, teachersService } from '../../services/api'
 import { useAuthStore } from '../../store/authStore'
 
 function getInitials(name: string) {
@@ -20,11 +21,24 @@ function roleLabel(role: string | undefined) {
 
 export default function Topbar() {
   const { user } = useAuthStore()
+  const navigate = useNavigate()
 
   const { data: unreadData } = useQuery({
     queryKey: ['communications', 'unread'],
     queryFn: () => communicationsService.unread().then((r) => r.data),
     refetchInterval: 60_000,
+  })
+
+  const { data: alunoProfile } = useQuery({
+    queryKey: ['students', 'me'],
+    queryFn: () => studentsService.me().then((r) => r.data),
+    enabled: user?.role === 'ALUNO',
+  })
+
+  const { data: professorProfile } = useQuery({
+    queryKey: ['teachers', 'me'],
+    queryFn: () => teachersService.me().then((r) => r.data),
+    enabled: user?.role === 'PROFESSOR',
   })
 
   const unreadCount: number =
@@ -34,7 +48,13 @@ export default function Topbar() {
       ? unreadData.count
       : 0
 
-  const displayName = user?.sub ?? 'Usuário'
+  const displayName =
+    user?.role === 'ALUNO'
+      ? (alunoProfile?.nome_completo ?? 'Aluno')
+      : user?.role === 'PROFESSOR'
+      ? (professorProfile?.nome_completo ?? 'Professor')
+      : 'Administrador'
+
   const initials = getInitials(displayName)
 
   return (
@@ -48,7 +68,10 @@ export default function Topbar() {
       <div className="flex items-center gap-4">
         {/* Notification bell */}
         <div className="relative">
-          <button className="w-9 h-9 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container transition-colors relative">
+          <button
+            onClick={() => navigate('/communications')}
+            className="w-9 h-9 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container transition-colors relative"
+          >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.6} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round"
                 d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />

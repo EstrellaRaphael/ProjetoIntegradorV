@@ -14,9 +14,10 @@ function formatDate(str: string) {
   return d.toLocaleDateString('pt-BR')
 }
 
-function gradeColor(value: number) {
-  if (value >= 7) return 'badge badge-success'
-  if (value >= 5) return 'badge badge-warning'
+function gradeColor(value: string | number) {
+  const v = Number(value)
+  if (v >= 7) return 'badge badge-success'
+  if (v >= 5) return 'badge badge-warning'
   return 'badge badge-danger'
 }
 
@@ -47,17 +48,17 @@ export default function AdminDashboard() {
 
   const { data: studentsCount } = useQuery({
     queryKey: ['students', 'count'],
-    queryFn: () => studentsService.count().then((r) => r.data?.count ?? 0),
+    queryFn: () => studentsService.count().then((r) => r.data?.total ?? 0),
   })
 
   const { data: teachersCount } = useQuery({
     queryKey: ['teachers', 'count'],
-    queryFn: () => teachersService.count().then((r) => r.data?.count ?? 0),
+    queryFn: () => teachersService.count().then((r) => r.data?.total ?? 0),
   })
 
   const { data: classesCount } = useQuery({
     queryKey: ['classes', 'active-count'],
-    queryFn: () => classesService.activeCount().then((r) => r.data?.count ?? 0),
+    queryFn: () => classesService.activeCount().then((r) => r.data?.total ?? 0),
   })
 
   const { data: unreadComms } = useQuery({
@@ -143,27 +144,38 @@ export default function AdminDashboard() {
             <table className="w-full">
               <thead className="table-head">
                 <tr>
-                  <th className="th">Aluno ID</th>
-                  <th className="th">Avaliação ID</th>
-                  <th className="th">Nota</th>
+                  <th className="th">Avaliação</th>
+                  <th className="th">Tipo</th>
+                  <th className="th text-center">BIM</th>
+                  <th className="th text-center">Nota</th>
                   <th className="th">Data</th>
                 </tr>
               </thead>
               <tbody>
                 {grades.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="td text-center text-on-surface-variant py-6">
+                    <td colSpan={5} className="td text-center text-on-surface-variant py-6">
                       Nenhuma nota recente encontrada.
                     </td>
                   </tr>
                 ) : (
                   grades.map((g) => (
                     <tr key={g.id} className="tr-row">
-                      <td className="td font-mono text-xs">{g.aluno_id.slice(0, 8)}…</td>
-                      <td className="td font-mono text-xs">{g.avaliacao_id.slice(0, 8)}…</td>
+                      <td className="td font-medium">{g.avaliacao?.titulo ?? g.avaliacao_id.slice(0, 8) + '…'}</td>
                       <td className="td">
+                        <span className={`badge text-[10px] ${
+                          g.avaliacao?.tipo === 'PROVA' ? 'badge-primary' :
+                          g.avaliacao?.tipo === 'TRABALHO' ? 'badge-secondary' :
+                          g.avaliacao?.tipo === 'RECUPERACAO' ? 'badge-warning' :
+                          'badge-neutral'
+                        }`}>
+                          {g.avaliacao?.tipo ?? '—'}
+                        </span>
+                      </td>
+                      <td className="td text-center text-on-surface-variant">{g.avaliacao?.bimestre ?? '—'}º</td>
+                      <td className="td text-center">
                         <span className={gradeColor(g.valor)}>
-                          {g.valor.toFixed(1).replace('.', ',')}
+                          {Number(g.valor).toFixed(1).replace('.', ',')}
                         </span>
                       </td>
                       <td className="td text-on-surface-variant">{formatDate(g.lancada_em)}</td>
