@@ -1,19 +1,10 @@
+import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { studentsService, gradesService, communicationsService, assessmentsService } from '../../services/api'
+import { studentsService, gradesService, communicationsService, assessmentsService, classesService, disciplinesService } from '../../services/api'
 import { useAuthStore } from '../../store/authStore'
-import type { Comunicado, Avaliacao, MediaBimestral } from '../../types'
-
-function formatDate(str: string) {
-  return new Date(str).toLocaleDateString('pt-BR')
-}
-
-function avgBadge(avg: string | number | undefined) {
-  if (avg === undefined || avg === null) return <span className="badge badge-neutral">—</span>
-  const v = Number(avg)
-  if (v >= 7) return <span className="badge badge-success">{v.toFixed(1).replace('.', ',')}</span>
-  if (v >= 5) return <span className="badge badge-warning">{v.toFixed(1).replace('.', ',')}</span>
-  return <span className="badge badge-danger">{v.toFixed(1).replace('.', ',')}</span>
-}
+import { formatDate, getInitials } from '../../utils/formatters'
+import GradeBadge from '../../components/ui/GradeBadge'
+import type { Comunicado, Avaliacao, MediaBimestral, Disciplina } from '../../types'
 
 function StatusIcon({ value }: { value: number }) {
   if (value >= 7)
@@ -61,6 +52,22 @@ export default function AlunoDashboard() {
     queryFn: () => assessmentsService.list().then((r) => r.data),
   })
 
+  const { data: turmaData } = useQuery({
+    queryKey: ['class', profileData?.turma_atual_id],
+    queryFn: () => classesService.getById(profileData!.turma_atual_id!).then((r) => r.data),
+    enabled: !!profileData?.turma_atual_id,
+  })
+
+  const { data: disciplinasData } = useQuery({
+    queryKey: ['disciplines'],
+    queryFn: () => disciplinesService.list().then((r) => r.data),
+  })
+
+  const disciplineNames = useMemo(() => {
+    const list: Disciplina[] = Array.isArray(disciplinasData) ? disciplinasData : disciplinasData?.data ?? []
+    return list.reduce<Record<string, string>>((acc, d) => { acc[d.id] = d.nome; return acc }, {})
+  }, [disciplinasData])
+
   const medias: MediaBimestral[] = boletimData?.medias_bimestrais ?? []
   const comms: Comunicado[] = Array.isArray(commsData) ? commsData.slice(0, 2) : []
   const assessments: Avaliacao[] = Array.isArray(assessmentsData)
@@ -68,7 +75,9 @@ export default function AlunoDashboard() {
     : assessmentsData?.data?.slice(0, 4) ?? []
 
   const nome = profileData?.nome_completo ?? user?.sub ?? 'Aluno'
-  const turma = profileData?.turma_atual_id ? `Turma ${profileData.turma_atual_id.slice(0, 8)}` : 'Sem turma'
+  const turma = profileData?.turma_atual_id
+    ? `Turma ${turmaData?.codigo ?? profileData.turma_atual_id.slice(0, 8)}`
+    : 'Sem turma'
 
   // Group medias by disciplina
   const byDisciplina = medias.reduce((acc: Record<string, MediaBimestral[]>, m) => {
@@ -82,9 +91,9 @@ export default function AlunoDashboard() {
     <div className="space-y-6">
       {/* Greeting */}
       <div className="card-padded flex items-center gap-4">
-        <div className="w-14 h-14 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
-          <span className="text-white text-xl font-bold">
-            {nome.split(' ').slice(0, 2).map((n: string) => n[0]).join('').toUpperCase()}
+        <div className="avatar-lg avatar-primary">
+          <span className="avatar-initials-lg">
+            {getInitials(nome)}
           </span>
         </div>
         <div>
@@ -124,11 +133,11 @@ export default function AlunoDashboard() {
                     const avg = bims.reduce((s, m) => s + Number(m.valor_calculado), 0) / (bims.length || 1)
                     return (
                       <tr key={discId} className="tr-row">
-                        <td className="td font-medium">{discId.slice(0, 8)}…</td>
-                        <td className="td text-center">{avgBadge(getB(1)?.valor_calculado)}</td>
-                        <td className="td text-center">{avgBadge(getB(2)?.valor_calculado)}</td>
-                        <td className="td text-center">{avgBadge(getB(3)?.valor_calculado)}</td>
-                        <td className="td text-center">{avgBadge(getB(4)?.valor_calculado)}</td>
+                        <td className="td font-medium">{disciplineNames[discId] ?? 'Disciplina'}</td>
+                        <td className="td text-center"><GradeBadge value={getB(1)?.valor_calculado} /></td>
+                        <td className="td text-center"><GradeBadge value={getB(2)?.valor_calculado} /></td>
+                        <td className="td text-center"><GradeBadge value={getB(3)?.valor_calculado} /></td>
+                        <td className="td text-center"><GradeBadge value={getB(4)?.valor_calculado} /></td>
                         <td className="td text-center">
                           <div className="flex justify-center">
                             <StatusIcon value={avg} />

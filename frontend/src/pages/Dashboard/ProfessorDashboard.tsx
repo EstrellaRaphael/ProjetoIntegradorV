@@ -1,7 +1,9 @@
+import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { teachersService, communicationsService, assessmentsService } from '../../services/api'
+import { teachersService, communicationsService, assessmentsService, classesService, disciplinesService } from '../../services/api'
 import { useAuthStore } from '../../store/authStore'
-import type { GradeHoraria, Comunicado, Avaliacao } from '../../types'
+import { formatDate } from '../../utils/formatters'
+import type { GradeHoraria, Comunicado, Avaliacao, Turma, Disciplina } from '../../types'
 
 const DAYS_PT: Record<string, string> = {
   SEGUNDA: 'Segunda',
@@ -15,10 +17,6 @@ const DAYS_PT: Record<string, string> = {
 function todayDayName(): string {
   const days = ['DOMINGO', 'SEGUNDA', 'TERCA', 'QUARTA', 'QUINTA', 'SEXTA', 'SABADO']
   return days[new Date().getDay()]
-}
-
-function formatDate(str: string) {
-  return new Date(str).toLocaleDateString('pt-BR')
 }
 
 export default function ProfessorDashboard() {
@@ -43,6 +41,26 @@ export default function ProfessorDashboard() {
     enabled: !!professorId,
   })
 
+  const { data: turmasData } = useQuery({
+    queryKey: ['classes', 'all'],
+    queryFn: () => classesService.list({ limit: 200 }).then((r) => r.data),
+  })
+
+  const { data: disciplinasData } = useQuery({
+    queryKey: ['disciplines'],
+    queryFn: () => disciplinesService.list().then((r) => r.data),
+  })
+
+  const turmaNames = useMemo(() => {
+    const list: Turma[] = Array.isArray(turmasData) ? turmasData : turmasData?.data ?? []
+    return list.reduce<Record<string, string>>((acc, t) => { acc[t.id] = t.codigo; return acc }, {})
+  }, [turmasData])
+
+  const disciplinaNames = useMemo(() => {
+    const list: Disciplina[] = Array.isArray(disciplinasData) ? disciplinasData : disciplinasData?.data ?? []
+    return list.reduce<Record<string, string>>((acc, d) => { acc[d.id] = d.nome; return acc }, {})
+  }, [disciplinasData])
+
   const today = todayDayName()
   const allSchedule: GradeHoraria[] = Array.isArray(scheduleData) ? scheduleData : scheduleData?.data ?? []
   const todaySchedule = allSchedule.filter((s) => s.dia_semana === today)
@@ -63,7 +81,7 @@ export default function ProfessorDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Horários de hoje */}
         <div className="card-padded">
-          <h3 className="text-sm font-semibold text-on-surface mb-4">
+          <h3 className="section-title">
             Horários de Hoje — {DAYS_PT[today] ?? today}
           </h3>
           {scheduleLoading ? (
@@ -82,10 +100,10 @@ export default function ProfessorDashboard() {
                 <div key={s.id} className="flex items-center justify-between p-3 bg-surface-container-low rounded-lg">
                   <div>
                     <p className="text-sm font-medium text-on-surface">
-                      Turma: {s.turma_id.slice(0, 8)}…
+                      Turma: {turmaNames[s.turma_id] ?? s.turma_id.slice(0, 8) + '…'}
                     </p>
                     <p className="text-xs text-on-surface-variant">
-                      Disciplina: {s.disciplina_id.slice(0, 8)}…
+                      Disciplina: {disciplinaNames[s.disciplina_id] ?? s.disciplina_id.slice(0, 8) + '…'}
                     </p>
                   </div>
                   <div className="text-right">
@@ -100,7 +118,7 @@ export default function ProfessorDashboard() {
 
         {/* Comunicados */}
         <div className="card-padded">
-          <h3 className="text-sm font-semibold text-on-surface mb-4">Comunicados Recentes</h3>
+          <h3 className="section-title">Comunicados Recentes</h3>
           {comms.length === 0 ? (
             <p className="text-sm text-on-surface-variant text-center py-6">Sem comunicados.</p>
           ) : (

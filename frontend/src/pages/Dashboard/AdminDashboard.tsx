@@ -7,19 +7,9 @@ import {
   communicationsService,
   gradesService,
 } from '../../services/api'
+import { formatDate } from '../../utils/formatters'
+import GradeBadge from '../../components/ui/GradeBadge'
 import type { Nota } from '../../types'
-
-function formatDate(str: string) {
-  const d = new Date(str)
-  return d.toLocaleDateString('pt-BR')
-}
-
-function gradeColor(value: string | number) {
-  const v = Number(value)
-  if (v >= 7) return 'badge badge-success'
-  if (v >= 5) return 'badge badge-warning'
-  return 'badge badge-danger'
-}
 
 function StatCard({
   label,
@@ -174,9 +164,7 @@ export default function AdminDashboard() {
                       </td>
                       <td className="td text-center text-on-surface-variant">{g.avaliacao?.bimestre ?? '—'}º</td>
                       <td className="td text-center">
-                        <span className={gradeColor(g.valor)}>
-                          {Number(g.valor).toFixed(1).replace('.', ',')}
-                        </span>
+                        <GradeBadge value={g.valor} />
                       </td>
                       <td className="td text-on-surface-variant">{formatDate(g.lancada_em)}</td>
                     </tr>
@@ -190,7 +178,7 @@ export default function AdminDashboard() {
         {/* Ações rápidas */}
         <div className="space-y-4">
           <div className="card-padded">
-            <h3 className="text-sm font-semibold text-on-surface mb-4">Ações Rápidas</h3>
+            <h3 className="section-title">Ações Rápidas</h3>
             <div className="space-y-2">
               <button className="btn-primary w-full justify-start" onClick={() => navigate('/students/new')}>
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">

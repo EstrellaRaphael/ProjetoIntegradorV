@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
-import { assessmentsService } from '../../services/api'
+import { assessmentsService, classesService, disciplinesService } from '../../services/api'
 import type { Avaliacao, AvaliacaoTipo } from '../../types'
 import Modal from '../../components/ui/Modal'
 import EmptyState from '../../components/ui/EmptyState'
@@ -46,6 +46,33 @@ export default function AssessmentListPage() {
     queryKey: ['assessments', params],
     queryFn: () => assessmentsService.list(params).then((r) => r.data),
   })
+
+  const { data: disciplinasData } = useQuery({
+    queryKey: ['disciplines'],
+    queryFn: () => disciplinesService.list().then((r) => r.data),
+  })
+
+  const { data: turmasData } = useQuery({
+    queryKey: ['classes'],
+    queryFn: () => classesService.list({ limit: 200 }).then((r) => r.data),
+  })
+
+  const disciplineNames: Record<string, string> = useMemo(() => {
+    const list = Array.isArray(disciplinasData) ? disciplinasData : disciplinasData?.data ?? []
+    const map: Record<string, string> = {}
+    list.forEach((d: { id: string; nome: string }) => { map[d.id] = d.nome })
+    return map
+  }, [disciplinasData])
+
+  const classNames: Record<string, string> = useMemo(() => {
+    const list = turmasData?.data ?? []
+    const map: Record<string, string> = {}
+    list.forEach((t: { id: string; codigo: string }) => { map[t.id] = t.codigo })
+    return map
+  }, [turmasData])
+
+  const disciplinas = Array.isArray(disciplinasData) ? disciplinasData : disciplinasData?.data ?? []
+  const turmas = turmasData?.data ?? []
 
   const createMutation = useMutation({
     mutationFn: (d: Record<string, unknown>) => assessmentsService.create(d),
@@ -111,7 +138,7 @@ export default function AssessmentListPage() {
       <div className="table-wrap">
         {isLoading ? (
           <div className="p-6 space-y-3">
-            {[1, 2, 3].map((i) => <div key={i} className="h-10 bg-surface-container animate-pulse rounded-lg" />)}
+            {[1, 2, 3].map((i) => <div key={i} className="skeleton-row" />)}
           </div>
         ) : assessments.length === 0 ? (
           <EmptyState
@@ -140,8 +167,8 @@ export default function AssessmentListPage() {
                     <td className="td">
                       <span className={TIPO_BADGES[a.tipo]}>{TIPO_LABELS[a.tipo]}</span>
                     </td>
-                    <td className="td text-on-surface-variant">{a.disciplina_id.slice(0, 8)}…</td>
-                    <td className="td text-on-surface-variant">{a.turma_id.slice(0, 8)}…</td>
+                    <td className="td text-on-surface-variant">{disciplineNames[a.disciplina_id] ?? 'Disciplina'}</td>
+                    <td className="td text-on-surface-variant">{classNames[a.turma_id] ?? 'Turma'}</td>
                     <td className="td text-center">
                       <span className="badge badge-neutral">{a.bimestre}º</span>
                     </td>
@@ -164,7 +191,7 @@ export default function AssessmentListPage() {
             <label className="field-label">Título *</label>
             <input className="input-field" value={form.titulo} onChange={(e) => setForm((p) => ({ ...p, titulo: e.target.value }))} required />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="form-grid-2">
             <div>
               <label className="field-label">Tipo *</label>
               <select className="input-field" value={form.tipo} onChange={(e) => setForm((p) => ({ ...p, tipo: e.target.value as AvaliacaoTipo }))}>
@@ -180,17 +207,23 @@ export default function AssessmentListPage() {
               </select>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="form-grid-2">
             <div>
-              <label className="field-label">Disciplina ID *</label>
-              <input className="input-field" value={form.disciplina_id} onChange={(e) => setForm((p) => ({ ...p, disciplina_id: e.target.value }))} required />
+              <label className="field-label">Disciplina *</label>
+              <select className="input-field" value={form.disciplina_id} onChange={(e) => setForm((p) => ({ ...p, disciplina_id: e.target.value }))} required>
+                <option value="">Selecionar…</option>
+                {disciplinas.map((d: { id: string; nome: string }) => <option key={d.id} value={d.id}>{d.nome}</option>)}
+              </select>
             </div>
             <div>
-              <label className="field-label">Turma ID *</label>
-              <input className="input-field" value={form.turma_id} onChange={(e) => setForm((p) => ({ ...p, turma_id: e.target.value }))} required />
+              <label className="field-label">Turma *</label>
+              <select className="input-field" value={form.turma_id} onChange={(e) => setForm((p) => ({ ...p, turma_id: e.target.value }))} required>
+                <option value="">Selecionar…</option>
+                {turmas.map((t: { id: string; codigo: string; ano_letivo: number }) => <option key={t.id} value={t.id}>{t.codigo} — {t.ano_letivo}</option>)}
+              </select>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="form-grid-2">
             <div>
               <label className="field-label">Data de Aplicação *</label>
               <input type="date" className="input-field" value={form.data_aplicacao} onChange={(e) => setForm((p) => ({ ...p, data_aplicacao: e.target.value }))} required />
@@ -204,7 +237,7 @@ export default function AssessmentListPage() {
             <label className="field-label">Peso na Média (1–10) *</label>
             <input type="number" min={1} max={10} step={0.1} className="input-field" value={form.peso_na_media} onChange={(e) => setForm((p) => ({ ...p, peso_na_media: +e.target.value }))} required />
           </div>
-          <div className="flex justify-end gap-3 pt-2">
+          <div className="form-actions">
             <button type="button" className="btn-secondary" onClick={() => setModalOpen(false)}>Cancelar</button>
             <button type="submit" className="btn-primary" disabled={createMutation.isPending}>{createMutation.isPending ? 'Criando…' : 'Criar Avaliação'}</button>
           </div>

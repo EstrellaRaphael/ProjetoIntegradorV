@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
-import { communicationsService } from '../../services/api'
+import { communicationsService, classesService } from '../../services/api'
 import { useAuthStore } from '../../store/authStore'
+import { formatDate } from '../../utils/formatters'
 import type { Comunicado, TipoPublico } from '../../types'
 import Modal from '../../components/ui/Modal'
 
@@ -11,14 +12,6 @@ const PUBLICO_LABELS: Record<TipoPublico, string> = {
   TURMA_ESPECIFICA: 'Turma Específica',
   TODOS_PROFESSORES: 'Todos os Professores',
   LISTA_MANUAL: 'Lista Manual',
-}
-
-function formatDate(str: string) {
-  return new Date(str).toLocaleDateString('pt-BR')
-}
-
-function getInitials(id: string) {
-  return id.slice(0, 2).toUpperCase()
 }
 
 export default function CommunicationsPage() {
@@ -59,6 +52,14 @@ export default function CommunicationsPage() {
     },
     onError: () => toast.error('Erro ao enviar comunicado.'),
   })
+
+  const { data: turmasData } = useQuery({
+    queryKey: ['classes'],
+    queryFn: () => classesService.list({ limit: 200 }).then((r) => r.data),
+    enabled: isAdmin,
+  })
+
+  const turmas = turmasData?.data ?? []
 
   const communications: Comunicado[] = Array.isArray(data) ? data : data?.data ?? []
 
@@ -117,13 +118,13 @@ export default function CommunicationsPage() {
         {/* Left: list (35%) */}
         <div className="lg:w-[35%] flex flex-col gap-3">
           {/* Search */}
-          <div className="relative">
-            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+          <div className="search-wrap">
+            <svg className="search-icon" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
             </svg>
             <input
               type="text"
-              className="input-field pl-9"
+              className="search-input"
               placeholder="Buscar comunicados…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -131,7 +132,7 @@ export default function CommunicationsPage() {
           </div>
 
           {/* List */}
-          <div className="card flex-1 overflow-y-auto">
+          <div className="comm-list">
             {isLoading ? (
               <div className="p-4 space-y-3">
                 {[1, 2, 3, 4].map((i) => (
@@ -151,15 +152,11 @@ export default function CommunicationsPage() {
                     <button
                       key={c.id}
                       onClick={() => handleSelect(c)}
-                      className={`w-full text-left px-4 py-3 transition-colors hover:bg-surface-container/60 ${
-                        isSelected ? 'bg-primary-fixed/40' : ''
-                      }`}
+                      className={`comm-item ${isSelected ? 'active' : ''}`}
                     >
                       <div className="flex items-start gap-2">
-                        {unread && (
-                          <span className="mt-1.5 w-2 h-2 rounded-full bg-primary flex-shrink-0" />
-                        )}
-                        {!unread && <span className="mt-1.5 w-2 h-2 flex-shrink-0" />}
+                        {unread && <span className="comm-unread-dot" />}
+                        {!unread && <span className="comm-spacer-dot" />}
                         <div className="flex-1 min-w-0">
                           <p className={`text-sm truncate ${unread ? 'font-semibold text-on-surface' : 'text-on-surface'}`}>
                             {c.titulo}
@@ -186,9 +183,9 @@ export default function CommunicationsPage() {
                   <div className="flex flex-wrap items-center gap-2 mt-1.5">
                     <div className="flex items-center gap-1.5">
                       <div className="w-6 h-6 rounded-full bg-secondary-container flex items-center justify-center">
-                        <span className="text-secondary text-[10px] font-bold">{getInitials(selected.remetente_id)}</span>
+                        <span className="text-secondary text-[10px] font-bold">AD</span>
                       </div>
-                      <span className="text-xs text-on-surface-variant">{selected.remetente_id.slice(0, 12)}…</span>
+                      <span className="text-xs text-on-surface-variant">Administrador</span>
                     </div>
                     <span className="text-xs text-on-surface-variant">·</span>
                     <span className="text-xs text-on-surface-variant">{formatDate(selected.data_envio)}</span>
@@ -251,8 +248,11 @@ export default function CommunicationsPage() {
 
           {form.publico_alvo === 'TURMA_ESPECIFICA' && (
             <div>
-              <label className="field-label">ID da Turma *</label>
-              <input className="input-field" value={form.turma_id} onChange={(e) => setForm((p) => ({ ...p, turma_id: e.target.value }))} placeholder="UUID da turma" />
+              <label className="field-label">Turma *</label>
+              <select className="input-field" value={form.turma_id} onChange={(e) => setForm((p) => ({ ...p, turma_id: e.target.value }))}>
+                <option value="">Selecionar…</option>
+                {turmas.map((t: { id: string; codigo: string; ano_letivo: number }) => <option key={t.id} value={t.id}>{t.codigo} — {t.ano_letivo}</option>)}
+              </select>
             </div>
           )}
 
@@ -268,7 +268,7 @@ export default function CommunicationsPage() {
             </div>
           )}
 
-          <div className="flex justify-end gap-3 pt-2">
+          <div className="form-actions">
             <button type="button" className="btn-secondary" onClick={() => setModalOpen(false)}>Cancelar</button>
             <button type="submit" className="btn-primary" disabled={createMutation.isPending}>{createMutation.isPending ? 'Enviando…' : 'Enviar'}</button>
           </div>

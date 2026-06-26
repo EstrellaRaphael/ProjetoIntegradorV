@@ -22,6 +22,11 @@ function parseJWT(token: string): JWTPayload | null {
   }
 }
 
+function isExpired(payload: JWTPayload | null): boolean {
+  if (!payload?.exp) return false
+  return payload.exp * 1000 < Date.now()
+}
+
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
@@ -47,6 +52,19 @@ export const useAuthStore = create<AuthState>()(
     {
       name: 'auth-storage',
       partialize: (s) => ({ accessToken: s.accessToken, refreshToken: s.refreshToken }),
+      onRehydrateStorage: () => (state) => {
+        if (!state?.accessToken) return
+        const user = parseJWT(state.accessToken)
+        if (!user || (isExpired(user) && !state.refreshToken)) {
+          state.accessToken = null
+          state.refreshToken = null
+          state.user = null
+          state.isAuthenticated = false
+          return
+        }
+        state.user = user
+        state.isAuthenticated = true
+      },
     }
   )
 )

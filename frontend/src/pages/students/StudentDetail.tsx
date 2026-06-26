@@ -1,38 +1,13 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { studentsService, gradesService } from '../../services/api'
+import { studentsService, gradesService, classesService, disciplinesService } from '../../services/api'
 import type { Aluno, FrequenciaConsolidada, MediaBimestral } from '../../types'
-
-function formatDate(str?: string) {
-  if (!str) return '—'
-  return new Date(str).toLocaleDateString('pt-BR')
-}
-
-function Field({ label, value }: { label: string; value?: string | number | null }) {
-  return (
-    <div>
-      <p className="field-label">{label}</p>
-      <p className="text-sm text-on-surface">{value ?? '—'}</p>
-    </div>
-  )
-}
-
-function statusBadge(status: string) {
-  const map: Record<string, string> = {
-    ATIVO: 'badge badge-success',
-    INATIVO: 'badge badge-neutral',
-    TRANCADO: 'badge badge-warning',
-  }
-  return <span className={map[status] ?? 'badge badge-neutral'}>{status}</span>
-}
-
-function gradeBadge(value: string | number) {
-  const v = Number(value)
-  if (v >= 7) return <span className="badge badge-success">{v.toFixed(1).replace('.', ',')}</span>
-  if (v >= 5) return <span className="badge badge-warning">{v.toFixed(1).replace('.', ',')}</span>
-  return <span className="badge badge-danger">{v.toFixed(1).replace('.', ',')}</span>
-}
+import { formatDate, getInitials } from '../../utils/formatters'
+import Field from '../../components/ui/Field'
+import StatusBadge from '../../components/ui/StatusBadge'
+import GradeBadge from '../../components/ui/GradeBadge'
+import TabNav from '../../components/ui/TabNav'
 
 type Tab = 'dados' | 'frequencia' | 'boletim' | 'historico'
 
@@ -65,11 +40,27 @@ export default function StudentDetailPage() {
     enabled: !!id && tab === 'historico',
   })
 
+  const { data: disciplinesData } = useQuery({
+    queryKey: ['disciplines'],
+    queryFn: () => disciplinesService.list().then((r) => r.data),
+  })
+  const disciplineNames: Record<string, string> = {}
+  const discList = Array.isArray(disciplinesData) ? disciplinesData : disciplinesData?.data ?? []
+  discList.forEach((d: { id: string; nome: string }) => { disciplineNames[d.id] = d.nome })
+
+  const { data: classesData } = useQuery({
+    queryKey: ['classes', 'all'],
+    queryFn: () => classesService.list({ limit: 200 }).then((r) => r.data),
+  })
+  const classNames: Record<string, string> = {}
+  const classList = classesData?.data ?? []
+  classList.forEach((c: { id: string; codigo: string }) => { classNames[c.id] = c.codigo })
+
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <div className="h-24 bg-surface-container animate-pulse rounded-xl" />
-        <div className="h-64 bg-surface-container animate-pulse rounded-xl" />
+        <div className="skeleton-card" />
+        <div className="skeleton-block" />
       </div>
     )
   }
@@ -103,21 +94,21 @@ export default function StudentDetailPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="card-padded">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
-              <span className="text-white text-xl font-bold">
-                {student.nome_completo.split(' ').slice(0, 2).map((n) => n[0]).join('').toUpperCase()}
+      <div className="detail-header">
+        <div className="detail-header-inner">
+          <div className="detail-header-info">
+            <div className="avatar-lg avatar-primary">
+              <span className="avatar-initials-lg">
+                {getInitials(student.nome_completo)}
               </span>
             </div>
             <div>
               <h1 className="page-title">{student.nome_completo}</h1>
               <div className="flex items-center flex-wrap gap-2 mt-1">
                 <span className="badge badge-neutral font-mono">{student.matricula}</span>
-                {statusBadge(student.status)}
+                <StatusBadge status={student.status} />
                 {student.turma_atual_id && (
-                  <span className="badge badge-primary">Turma {student.turma_atual_id.slice(0, 8)}</span>
+                  <span className="badge badge-primary">{classNames[student.turma_atual_id] ?? 'Vinculado'}</span>
                 )}
               </div>
             </div>
@@ -140,29 +131,13 @@ export default function StudentDetailPage() {
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-outline-variant/40">
-        <div className="flex gap-0 overflow-x-auto">
-          {tabs.map((t) => (
-            <button
-              key={t.key}
-              onClick={() => setTab(t.key)}
-              className={`px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
-                tab === t.key
-                  ? 'border-primary text-primary'
-                  : 'border-transparent text-on-surface-variant hover:text-on-surface'
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-      </div>
+      <TabNav tabs={tabs} active={tab} onChange={setTab} />
 
       {/* Tab content */}
       {tab === 'dados' && (
         <div className="card-padded space-y-6">
           <div>
-            <h3 className="text-sm font-semibold text-on-surface mb-4">Dados Pessoais</h3>
+            <h3 className="section-title">Dados Pessoais</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <Field label="Nome Completo" value={student.nome_completo} />
               <Field label="E-mail" value={student.email} />
@@ -174,7 +149,7 @@ export default function StudentDetailPage() {
           </div>
           <div className="divider" />
           <div>
-            <h3 className="text-sm font-semibold text-on-surface mb-4">Endereço</h3>
+            <h3 className="section-title">Endereço</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <Field label="CEP" value={student.end_cep} />
               <Field label="Logradouro" value={student.end_logradouro} />
@@ -187,10 +162,10 @@ export default function StudentDetailPage() {
           </div>
           <div className="divider" />
           <div>
-            <h3 className="text-sm font-semibold text-on-surface mb-4">Vínculo Escolar</h3>
+            <h3 className="section-title">Vínculo Escolar</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Field label="Matrícula" value={student.matricula} />
-              <Field label="Turma Atual" value={student.turma_atual_id ?? 'Sem turma'} />
+              <Field label="Turma Atual" value={student.turma_atual_id ? (classNames[student.turma_atual_id] ?? 'Vinculado') : 'Sem turma'} />
               <Field label="Cadastrado em" value={formatDate(student.created_at)} />
               <Field label="Atualizado em" value={formatDate(student.updated_at)} />
             </div>
@@ -223,7 +198,7 @@ export default function StudentDetailPage() {
                 ) : (
                   frequencia.map((f) => (
                     <tr key={f.id} className="tr-row">
-                      <td className="td font-medium">{f.disciplina_id.slice(0, 8)}…</td>
+                      <td className="td font-medium">{disciplineNames[f.disciplina_id] ?? 'Disciplina'}</td>
                       <td className="td text-center">{f.bimestre}º BIM</td>
                       <td className="td text-center">{f.total_aulas}</td>
                       <td className="td text-center text-success">{f.total_presencas}</td>
@@ -280,21 +255,21 @@ export default function StudentDetailPage() {
                       : 0
                     return (
                       <tr key={discId} className="tr-row">
-                        <td className="td font-medium">{discId.slice(0, 8)}…</td>
+                        <td className="td font-medium">{disciplineNames[discId] ?? 'Disciplina'}</td>
                         <td className="td text-center">
-                          {getB(1) ? gradeBadge(getB(1)!.valor_calculado) : <span className="text-on-surface-variant">—</span>}
+                          <GradeBadge value={getB(1)?.valor_calculado} />
                         </td>
                         <td className="td text-center">
-                          {getB(2) ? gradeBadge(getB(2)!.valor_calculado) : <span className="text-on-surface-variant">—</span>}
+                          <GradeBadge value={getB(2)?.valor_calculado} />
                         </td>
                         <td className="td text-center">
-                          {getB(3) ? gradeBadge(getB(3)!.valor_calculado) : <span className="text-on-surface-variant">—</span>}
+                          <GradeBadge value={getB(3)?.valor_calculado} />
                         </td>
                         <td className="td text-center">
-                          {getB(4) ? gradeBadge(getB(4)!.valor_calculado) : <span className="text-on-surface-variant">—</span>}
+                          <GradeBadge value={getB(4)?.valor_calculado} />
                         </td>
                         <td className="td text-center">
-                          {validBims.length > 0 ? gradeBadge(avg) : <span className="text-on-surface-variant">—</span>}
+                          {validBims.length > 0 ? <GradeBadge value={avg} /> : <span className="text-on-surface-variant">—</span>}
                         </td>
                         <td className="td text-center">
                           {validBims.length > 0 ? (
@@ -330,14 +305,14 @@ export default function StudentDetailPage() {
               <div key={h.id} className="card-padded">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-sm font-semibold text-on-surface">Ano Letivo {h.ano_letivo}</h3>
-                  <span className="badge badge-neutral">Turma {h.turma_id.slice(0, 8)}</span>
+                  <span className="badge badge-neutral">{classNames[h.turma_id] ?? 'Turma'}</span>
                 </div>
                 <div className="space-y-2">
                   {h.resultado_disciplina.map((rd) => (
                     <div key={rd.disciplina_id} className="flex items-center justify-between py-2 border-b border-outline-variant/20 last:border-0">
-                      <span className="text-sm text-on-surface">{rd.disciplina_id.slice(0, 8)}…</span>
+                      <span className="text-sm text-on-surface">{disciplineNames[rd.disciplina_id] ?? 'Disciplina'}</span>
                       <div className="flex items-center gap-2">
-                        {gradeBadge(rd.media_final)}
+                        <GradeBadge value={rd.media_final} />
                         <span className={`badge ${rd.status === 'APROVADO' ? 'badge-success' : 'badge-danger'}`}>
                           {rd.status}
                         </span>

@@ -82,12 +82,12 @@ export default function GradeLaunchPage() {
 
       {/* Step 1: Assessment selector */}
       <div className="card-padded">
-        <h3 className="text-sm font-semibold text-on-surface mb-4">
-          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary text-white text-xs font-bold mr-2">1</span>
+        <h3 className="section-title">
+          <span className="step-number">1</span>
           Selecionar Avaliação
         </h3>
         {assessmentsLoading ? (
-          <div className="h-10 bg-surface-container animate-pulse rounded-lg" />
+          <div className="skeleton-row" />
         ) : (
           <select
             className="input-field max-w-lg"
@@ -122,7 +122,7 @@ export default function GradeLaunchPage() {
         <div className="card-padded space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold text-on-surface">
-              <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary text-white text-xs font-bold mr-2">2</span>
+              <span className="step-number">2</span>
               Lançar Notas
             </h3>
             <button

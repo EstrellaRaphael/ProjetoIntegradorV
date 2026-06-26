@@ -126,7 +126,7 @@ export default function CalendarPage() {
         <div className="table-wrap">
           {isLoading ? (
             <div className="p-6 space-y-3">
-              {[1, 2, 3].map((i) => <div key={i} className="h-10 bg-surface-container animate-pulse rounded-lg" />)}
+              {[1, 2, 3].map((i) => <div key={i} className="skeleton-row" />)}
             </div>
           ) : events.length === 0 ? (
             <div className="text-center py-12 text-on-surface-variant text-sm">Nenhum evento cadastrado.</div>
@@ -238,7 +238,7 @@ export default function CalendarPage() {
               ))}
             </select>
           </div>
-          <div className="flex justify-end gap-3 pt-2">
+          <div className="form-actions">
             <button type="button" className="btn-secondary" onClick={() => setModalOpen(false)}>Cancelar</button>
             <button type="submit" className="btn-primary" disabled={createMutation.isPending}>{createMutation.isPending ? 'Criando…' : 'Criar'}</button>
           </div>

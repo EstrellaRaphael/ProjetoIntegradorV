@@ -1,17 +1,11 @@
+import { useMemo } from 'react'
 import { useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { gradesService, studentsService } from '../../services/api'
+import { gradesService, studentsService, classesService, disciplinesService } from '../../services/api'
 import { useAuthStore } from '../../store/authStore'
+import { getInitials } from '../../utils/formatters'
+import GradeBadge from '../../components/ui/GradeBadge'
 import type { Aluno, MediaBimestral, ProvaFinal, FrequenciaConsolidada } from '../../types'
-
-function gradeBadge(value: string | number | undefined) {
-  if (value === undefined || value === null) return <span className="text-on-surface-variant tabular-nums">—</span>
-  const v = Number(value)
-  const fmt = v.toFixed(1).replace('.', ',')
-  if (v >= 7) return <span className="badge badge-success tabular-nums">{fmt}</span>
-  if (v >= 5) return <span className="badge badge-warning tabular-nums">{fmt}</span>
-  return <span className="badge badge-danger tabular-nums">{fmt}</span>
-}
 
 export default function BoletimPage() {
   const { alunoId } = useParams<{ alunoId?: string }>()
@@ -40,9 +34,27 @@ export default function BoletimPage() {
     enabled: !!targetId,
   })
 
+  const { data: disciplinasData } = useQuery({
+    queryKey: ['disciplines'],
+    queryFn: () => disciplinesService.list().then((r) => r.data),
+  })
+
   const medias: MediaBimestral[] = boletimData?.medias_bimestrais ?? []
   const provasFinais: ProvaFinal[] = boletimData?.provas_final ?? []
   const student: Aluno | undefined = studentData ?? boletimData?.aluno
+
+  const { data: turmaData } = useQuery({
+    queryKey: ['class', student?.turma_atual_id],
+    queryFn: () => classesService.getById(student!.turma_atual_id!).then((r) => r.data),
+    enabled: !!student?.turma_atual_id,
+  })
+
+  const disciplineNames: Record<string, string> = useMemo(() => {
+    const list = Array.isArray(disciplinasData) ? disciplinasData : disciplinasData?.data ?? []
+    const map: Record<string, string> = {}
+    list.forEach((d: { id: string; nome: string }) => { map[d.id] = d.nome })
+    return map
+  }, [disciplinasData])
   const frequencias: FrequenciaConsolidada[] = Array.isArray(frequenciaData) ? frequenciaData : frequenciaData?.data ?? []
 
   // Group by disciplina_id
@@ -64,8 +76,8 @@ export default function BoletimPage() {
   if (studentLoading || boletimLoading) {
     return (
       <div className="space-y-4">
-        <div className="h-24 bg-surface-container animate-pulse rounded-xl" />
-        <div className="h-64 bg-surface-container animate-pulse rounded-xl" />
+        <div className="skeleton-card" />
+        <div className="skeleton-block" />
       </div>
     )
   }
@@ -73,18 +85,18 @@ export default function BoletimPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="card-padded">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
-            <span className="text-white text-xl font-bold">
-              {(student?.nome_completo ?? 'A').split(' ').slice(0, 2).map((n) => n[0]).join('').toUpperCase()}
+      <div className="detail-header">
+        <div className="detail-header-info">
+          <div className="avatar-lg avatar-primary">
+            <span className="avatar-initials-lg">
+              {getInitials(student?.nome_completo ?? 'A')}
             </span>
           </div>
           <div>
             <h1 className="page-title">{student?.nome_completo ?? 'Aluno'}</h1>
             <div className="flex flex-wrap items-center gap-2 mt-1">
               {student?.matricula && <span className="badge badge-neutral font-mono">{student.matricula}</span>}
-              {student?.turma_atual_id && <span className="badge badge-primary">Turma {student.turma_atual_id.slice(0, 8)}</span>}
+              {student?.turma_atual_id && <span className="badge badge-primary">Turma {turmaData?.codigo ?? 'Turma'}</span>}
             </div>
           </div>
         </div>
@@ -142,13 +154,13 @@ export default function BoletimPage() {
 
                   return (
                     <tr key={discId} className="tr-row">
-                      <td className="td font-medium">{discId.slice(0, 8)}…</td>
-                      <td className="td text-center">{gradeBadge(getB(1)?.valor_calculado)}</td>
-                      <td className="td text-center">{gradeBadge(getB(2)?.valor_calculado)}</td>
-                      <td className="td text-center">{gradeBadge(getB(3)?.valor_calculado)}</td>
-                      <td className="td text-center">{gradeBadge(getB(4)?.valor_calculado)}</td>
-                      <td className="td text-center">{gradeBadge(recBim?.valor_calculado)}</td>
-                      <td className="td text-center">{gradeBadge(regularBims.length > 0 ? avg : undefined)}</td>
+                      <td className="td font-medium">{disciplineNames[discId] ?? 'Disciplina'}</td>
+                      <td className="td text-center"><GradeBadge value={getB(1)?.valor_calculado} /></td>
+                      <td className="td text-center"><GradeBadge value={getB(2)?.valor_calculado} /></td>
+                      <td className="td text-center"><GradeBadge value={getB(3)?.valor_calculado} /></td>
+                      <td className="td text-center"><GradeBadge value={getB(4)?.valor_calculado} /></td>
+                      <td className="td text-center"><GradeBadge value={recBim?.valor_calculado} /></td>
+                      <td className="td text-center"><GradeBadge value={regularBims.length > 0 ? avg : undefined} /></td>
                       <td className="td text-center">
                         <span className={statusBadge}>{statusLabel}</span>
                       </td>
@@ -182,7 +194,7 @@ export default function BoletimPage() {
               <tbody>
                 {frequencias.map((f) => (
                   <tr key={f.id} className="tr-row">
-                    <td className="td font-medium">{f.disciplina_id.slice(0, 8)}…</td>
+                    <td className="td font-medium">{disciplineNames[f.disciplina_id] ?? 'Disciplina'}</td>
                     <td className="td text-center">{f.bimestre}º BIM</td>
                     <td className="td text-center">{f.total_aulas}</td>
                     <td className="td text-center text-success">{f.total_presencas}</td>
@@ -207,7 +219,7 @@ export default function BoletimPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {provasFinais.map((pf) => (
               <div key={pf.id} className="card-padded space-y-2">
-                <p className="text-xs text-on-surface-variant">Disciplina: {pf.disciplina_id.slice(0, 8)}…</p>
+                <p className="text-xs text-on-surface-variant">Disciplina: {disciplineNames[pf.disciplina_id] ?? 'Disciplina'}</p>
                 <div className="flex justify-between text-sm">
                   <span className="text-on-surface-variant">Média Anual</span>
                   <span className="font-semibold">{Number(pf.media_anual).toFixed(1).replace('.', ',')}</span>

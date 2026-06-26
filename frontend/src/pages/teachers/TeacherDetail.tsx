@@ -1,10 +1,14 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
-import { teachersService } from '../../services/api'
-import type { Professor, GradeHoraria, DiaSemana } from '../../types'
+import { teachersService, classesService, disciplinesService } from '../../services/api'
+import { useAuthStore } from '../../store/authStore'
+import type { Professor, GradeHoraria, DiaSemana, Turma, Disciplina } from '../../types'
 import Modal from '../../components/ui/Modal'
+import TabNav from '../../components/ui/TabNav'
+import Field from '../../components/ui/Field'
+import { formatDate, getInitials } from '../../utils/formatters'
 
 const DAYS: DiaSemana[] = ['SEGUNDA', 'TERCA', 'QUARTA', 'QUINTA', 'SEXTA', 'SABADO']
 const DAYS_PT: Record<DiaSemana, string> = {
@@ -17,6 +21,8 @@ type Tab = 'dados' | 'grade' | 'substituicoes'
 export default function TeacherDetailPage() {
   const { id } = useParams<{ id: string }>()
   const queryClient = useQueryClient()
+  const { user } = useAuthStore()
+  const isAdmin = user?.role === 'ADMIN'
   const [tab, setTab] = useState<Tab>('dados')
   const [modalOpen, setModalOpen] = useState(false)
   const [editTeacher, setEditTeacher] = useState(false)
@@ -44,6 +50,33 @@ export default function TeacherDetailPage() {
     enabled: !!id && tab === 'substituicoes',
   })
 
+  const { data: turmasData } = useQuery({
+    queryKey: ['classes', 'all'],
+    queryFn: () => classesService.list({ limit: 200 }).then((r) => r.data),
+    enabled: isAdmin,
+  })
+
+  const { data: disciplinasData } = useQuery({
+    queryKey: ['disciplines'],
+    queryFn: () => disciplinesService.list().then((r) => r.data),
+    enabled: isAdmin,
+  })
+
+  const turmas: Turma[] = Array.isArray(turmasData) ? turmasData : turmasData?.data ?? []
+  const disciplinas: Disciplina[] = Array.isArray(disciplinasData) ? disciplinasData : disciplinasData?.data ?? []
+
+  const turmaMap = useMemo(() => {
+    const m = new Map<string, string>()
+    turmas.forEach((t) => m.set(t.id, t.codigo))
+    return m
+  }, [turmas])
+
+  const disciplinaMap = useMemo(() => {
+    const m = new Map<string, string>()
+    disciplinas.forEach((d) => m.set(d.id, d.nome))
+    return m
+  }, [disciplinas])
+
   const updateMutation = useMutation({
     mutationFn: (d: Record<string, unknown>) => teachersService.update(id!, d),
     onSuccess: () => {
@@ -67,7 +100,7 @@ export default function TeacherDetailPage() {
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <div className="h-24 bg-surface-container animate-pulse rounded-xl" />
+        <div className="skeleton-card" />
       </div>
     )
   }
@@ -90,12 +123,12 @@ export default function TeacherDetailPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="card-padded">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-full bg-secondary-container flex items-center justify-center flex-shrink-0">
-              <span className="text-secondary text-xl font-bold">
-                {teacher.nome_completo.split(' ').slice(0, 2).map((n) => n[0]).join('').toUpperCase()}
+      <div className="detail-header">
+        <div className="detail-header-inner">
+          <div className="detail-header-info">
+            <div className="avatar-lg avatar-secondary">
+              <span className="avatar-initials-lg">
+                {getInitials(teacher.nome_completo)}
               </span>
             </div>
             <div>
@@ -103,64 +136,45 @@ export default function TeacherDetailPage() {
               <p className="page-subtitle">{teacher.email}</p>
             </div>
           </div>
-          <button className="btn-secondary btn-sm flex-shrink-0" onClick={() => {
-            setEditForm({ nome_completo: teacher.nome_completo, email: teacher.email })
-            setEditTeacher(true)
-          }}>
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.6} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
-            </svg>
-            Editar
-          </button>
+          {isAdmin && (
+            <button className="btn-secondary btn-sm flex-shrink-0" onClick={() => {
+              setEditForm({ nome_completo: teacher.nome_completo, email: teacher.email })
+              setEditTeacher(true)
+            }}>
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.6} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
+              </svg>
+              Editar
+            </button>
+          )}
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-outline-variant/40">
-        <div className="flex gap-0 overflow-x-auto">
-          {tabs.map((t) => (
-            <button
-              key={t.key}
-              onClick={() => setTab(t.key)}
-              className={`px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
-                tab === t.key ? 'border-primary text-primary' : 'border-transparent text-on-surface-variant hover:text-on-surface'
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-      </div>
+      <TabNav tabs={tabs} active={tab} onChange={setTab} />
 
       {tab === 'dados' && (
         <div className="card-padded">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <p className="field-label">Nome Completo</p>
-              <p className="text-sm text-on-surface">{teacher.nome_completo}</p>
-            </div>
-            <div>
-              <p className="field-label">E-mail</p>
-              <p className="text-sm text-on-surface">{teacher.email}</p>
-            </div>
-            <div>
-              <p className="field-label">Cadastrado em</p>
-              <p className="text-sm text-on-surface">{new Date(teacher.created_at).toLocaleDateString('pt-BR')}</p>
-            </div>
+            <Field label="Nome Completo" value={teacher.nome_completo} />
+            <Field label="E-mail" value={teacher.email} />
+            <Field label="Cadastrado em" value={formatDate(teacher.created_at)} />
           </div>
         </div>
       )}
 
       {tab === 'grade' && (
         <div className="space-y-4">
-          <div className="flex justify-end">
-            <button className="btn-primary btn-sm" onClick={() => setModalOpen(true)}>
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-              </svg>
-              Adicionar Horário
-            </button>
-          </div>
+          {isAdmin && (
+            <div className="flex justify-end">
+              <button className="btn-primary btn-sm" onClick={() => setModalOpen(true)}>
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+                Adicionar Horário
+              </button>
+            </div>
+          )}
           <div className="table-wrap overflow-x-auto">
             <table className="w-full">
               <thead className="table-head">
@@ -181,6 +195,8 @@ export default function TeacherDetailPage() {
                           grid[d].map((s) => (
                             <div key={s.id} className="p-2 bg-primary-fixed rounded text-xs">
                               <p className="font-semibold text-primary">{s.horario_inicio}–{s.horario_fim}</p>
+                              <p className="text-on-surface-variant truncate">{turmaMap.get(s.turma_id) ?? s.turma_id}</p>
+                              <p className="text-on-surface-variant truncate">{disciplinaMap.get(s.disciplina_id) ?? s.disciplina_id}</p>
                               <p className="text-on-surface-variant truncate">{s.bimestre}º BIM</p>
                             </div>
                           ))
@@ -215,7 +231,7 @@ export default function TeacherDetailPage() {
                     <tr key={c.id} className="tr-row">
                       <td className="td"><span className="badge badge-secondary">{c.tipo}</span></td>
                       <td className="td">{c.descricao}</td>
-                      <td className="td text-on-surface-variant">{new Date(c.publicado_em).toLocaleDateString('pt-BR')}</td>
+                      <td className="td text-on-surface-variant">{formatDate(c.publicado_em)}</td>
                       <td className="td text-center">
                         {c.processado ? <span className="badge badge-success">Processado</span> : <span className="badge badge-warning">Pendente</span>}
                       </td>
@@ -239,7 +255,7 @@ export default function TeacherDetailPage() {
             <label className="field-label">E-mail *</label>
             <input type="email" className="input-field" value={editForm.email} onChange={(e) => setEditForm((p) => ({ ...p, email: e.target.value }))} required />
           </div>
-          <div className="flex justify-end gap-3 pt-2">
+          <div className="form-actions">
             <button type="button" className="btn-secondary" onClick={() => setEditTeacher(false)}>Cancelar</button>
             <button type="submit" className="btn-primary" disabled={updateMutation.isPending}>{updateMutation.isPending ? 'Salvando…' : 'Salvar'}</button>
           </div>
@@ -249,14 +265,20 @@ export default function TeacherDetailPage() {
       {/* Add schedule modal */}
       <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title="Adicionar Horário" size="md">
         <form onSubmit={(e) => { e.preventDefault(); addScheduleMutation.mutate({ ...scheduleForm }) }} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="form-grid-2">
             <div>
-              <label className="field-label">Turma ID *</label>
-              <input className="input-field" value={scheduleForm.turma_id} onChange={(e) => setScheduleForm((p) => ({ ...p, turma_id: e.target.value }))} required />
+              <label className="field-label">Turma *</label>
+              <select className="input-field" value={scheduleForm.turma_id} onChange={(e) => setScheduleForm((p) => ({ ...p, turma_id: e.target.value }))} required>
+                <option value="">Selecione uma turma</option>
+                {turmas.map((t) => <option key={t.id} value={t.id}>{t.codigo}</option>)}
+              </select>
             </div>
             <div>
-              <label className="field-label">Disciplina ID *</label>
-              <input className="input-field" value={scheduleForm.disciplina_id} onChange={(e) => setScheduleForm((p) => ({ ...p, disciplina_id: e.target.value }))} required />
+              <label className="field-label">Disciplina *</label>
+              <select className="input-field" value={scheduleForm.disciplina_id} onChange={(e) => setScheduleForm((p) => ({ ...p, disciplina_id: e.target.value }))} required>
+                <option value="">Selecione uma disciplina</option>
+                {disciplinas.map((d) => <option key={d.id} value={d.id}>{d.nome}</option>)}
+              </select>
             </div>
             <div>
               <label className="field-label">Dia da Semana *</label>
@@ -283,7 +305,7 @@ export default function TeacherDetailPage() {
               <input type="number" className="input-field" value={scheduleForm.ano_letivo} onChange={(e) => setScheduleForm((p) => ({ ...p, ano_letivo: +e.target.value }))} required />
             </div>
           </div>
-          <div className="flex justify-end gap-3 pt-2">
+          <div className="form-actions">
             <button type="button" className="btn-secondary" onClick={() => setModalOpen(false)}>Cancelar</button>
             <button type="submit" className="btn-primary" disabled={addScheduleMutation.isPending}>{addScheduleMutation.isPending ? 'Salvando…' : 'Adicionar'}</button>
           </div>

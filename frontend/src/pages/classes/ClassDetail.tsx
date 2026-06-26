@@ -5,6 +5,9 @@ import toast from 'react-hot-toast'
 import { classesService, studentsService } from '../../services/api'
 import type { Turma, Aluno } from '../../types'
 import Modal from '../../components/ui/Modal'
+import TabNav from '../../components/ui/TabNav'
+import Field from '../../components/ui/Field'
+import { formatDate } from '../../utils/formatters'
 
 type Tab = 'dados' | 'alunos' | 'grade'
 
@@ -27,11 +30,22 @@ export default function ClassDetailPage() {
     enabled: modalOpen,
   })
 
+  const { data: classStudentsData } = useQuery({
+    queryKey: ['students', 'class', id],
+    queryFn: () => studentsService.list({ turma_id: id, limit: 200 }).then((r) => r.data),
+    enabled: !!id && tab === 'alunos',
+  })
+
+  const studentLookup: Record<string, Aluno> = {}
+  const classStudents: Aluno[] = classStudentsData?.data ?? []
+  classStudents.forEach((s) => { studentLookup[s.id] = s })
+
   const addStudentMutation = useMutation({
     mutationFn: (d: Record<string, unknown>) => classesService.addStudent(id!, d),
     onSuccess: () => {
       toast.success('Aluno alocado com sucesso!')
       queryClient.invalidateQueries({ queryKey: ['class', id] })
+      queryClient.invalidateQueries({ queryKey: ['students', 'class', id] })
       setModalOpen(false)
       setAlocarForm({ aluno_id: '', data_matricula: new Date().toISOString().split('T')[0] })
     },
@@ -65,30 +79,16 @@ export default function ClassDetailPage() {
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-outline-variant/40">
-        <div className="flex gap-0">
-          {tabs.map((t) => (
-            <button
-              key={t.key}
-              onClick={() => setTab(t.key)}
-              className={`px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
-                tab === t.key ? 'border-primary text-primary' : 'border-transparent text-on-surface-variant hover:text-on-surface'
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-      </div>
+      <TabNav tabs={tabs} active={tab} onChange={setTab} />
 
       {tab === 'dados' && (
         <div className="card-padded">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div><p className="field-label">Código</p><p className="text-sm text-on-surface">{turma.codigo}</p></div>
-            <div><p className="field-label">Ano Letivo</p><p className="text-sm text-on-surface">{turma.ano_letivo}</p></div>
-            <div><p className="field-label">Turno</p><p className="text-sm text-on-surface">{turnos[turma.turno]}</p></div>
-            <div><p className="field-label">Total de Alunos</p><p className="text-sm text-on-surface">{alocacoes.length}</p></div>
-            <div><p className="field-label">Calendário</p><p className="text-sm text-on-surface">{turma.calendario_id ?? '—'}</p></div>
+            <Field label="Código" value={turma.codigo} />
+            <Field label="Ano Letivo" value={turma.ano_letivo} />
+            <Field label="Turno" value={turnos[turma.turno]} />
+            <Field label="Total de Alunos" value={alocacoes.length} />
+            <Field label="Calendário" value={turma.calendario_id ? 'Vinculado' : '—'} />
           </div>
         </div>
       )}
@@ -108,18 +108,20 @@ export default function ClassDetailPage() {
               <table className="w-full">
                 <thead className="table-head">
                   <tr>
-                    <th className="th">Aluno ID</th>
+                    <th className="th">Aluno</th>
+                    <th className="th">Matrícula</th>
                     <th className="th">Data de Matrícula</th>
                   </tr>
                 </thead>
                 <tbody>
                   {alocacoes.length === 0 ? (
-                    <tr><td colSpan={2} className="td text-center text-on-surface-variant py-6">Nenhum aluno alocado.</td></tr>
+                    <tr><td colSpan={3} className="td text-center text-on-surface-variant py-6">Nenhum aluno alocado.</td></tr>
                   ) : (
                     alocacoes.map((a) => (
                       <tr key={a.id} className="tr-row">
-                        <td className="td font-mono text-xs">{a.aluno_id}</td>
-                        <td className="td text-on-surface-variant">{new Date(a.data_matricula).toLocaleDateString('pt-BR')}</td>
+                        <td className="td">{studentLookup[a.aluno_id]?.nome_completo ?? a.aluno_id.slice(0, 8)}</td>
+                        <td className="td text-on-surface-variant">{studentLookup[a.aluno_id]?.matricula ?? '—'}</td>
+                        <td className="td text-on-surface-variant">{formatDate(a.data_matricula)}</td>
                       </tr>
                     ))
                   )}
@@ -152,7 +154,7 @@ export default function ClassDetailPage() {
             <label className="field-label">Data de Matrícula *</label>
             <input type="date" className="input-field" value={alocarForm.data_matricula} onChange={(e) => setAlocarForm((p) => ({ ...p, data_matricula: e.target.value }))} required />
           </div>
-          <div className="flex justify-end gap-3 pt-2">
+          <div className="form-actions">
             <button type="button" className="btn-secondary" onClick={() => setModalOpen(false)}>Cancelar</button>
             <button type="submit" className="btn-primary" disabled={addStudentMutation.isPending}>{addStudentMutation.isPending ? 'Alocando…' : 'Alocar'}</button>
           </div>

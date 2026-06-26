@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { studentsService, classesService, disciplinesService } from '../../services/api'
@@ -78,7 +78,7 @@ function ProfessorFrequency() {
 
       {/* Form */}
       <div className="card-padded">
-        <h3 className="text-sm font-semibold text-on-surface mb-4">Configurar Chamada</h3>
+        <h3 className="section-title">Configurar Chamada</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
             <label className="field-label">Turma *</label>
@@ -126,7 +126,7 @@ function ProfessorFrequency() {
           </div>
           {studentsLoading ? (
             <div className="p-6 space-y-2">
-              {[1, 2, 3].map((i) => <div key={i} className="h-10 bg-surface-container animate-pulse rounded-lg" />)}
+              {[1, 2, 3].map((i) => <div key={i} className="skeleton-row" />)}
             </div>
           ) : students.length === 0 ? (
             <div className="text-center py-8 text-on-surface-variant text-sm">
@@ -186,6 +186,18 @@ function AlunoFrequency() {
     enabled: !!alunoId,
   })
 
+  const { data: disciplinasData } = useQuery({
+    queryKey: ['disciplines'],
+    queryFn: () => disciplinesService.list().then((r) => r.data),
+  })
+
+  const disciplineNames: Record<string, string> = useMemo(() => {
+    const list = Array.isArray(disciplinasData) ? disciplinasData : disciplinasData?.data ?? []
+    const map: Record<string, string> = {}
+    list.forEach((d: { id: string; nome: string }) => { map[d.id] = d.nome })
+    return map
+  }, [disciplinasData])
+
   const frequencias: FrequenciaConsolidada[] = Array.isArray(frequenciaData) ? frequenciaData : frequenciaData?.data ?? []
 
   return (
@@ -200,7 +212,7 @@ function AlunoFrequency() {
       <div className="table-wrap">
         {isLoading ? (
           <div className="p-6 space-y-3">
-            {[1, 2, 3].map((i) => <div key={i} className="h-10 bg-surface-container animate-pulse rounded-lg" />)}
+            {[1, 2, 3].map((i) => <div key={i} className="skeleton-row" />)}
           </div>
         ) : frequencias.length === 0 ? (
           <div className="text-center py-8 text-on-surface-variant text-sm">
@@ -223,7 +235,7 @@ function AlunoFrequency() {
               <tbody>
                 {frequencias.map((f) => (
                   <tr key={f.id} className="tr-row">
-                    <td className="td font-medium">{f.disciplina_id.slice(0, 8)}…</td>
+                    <td className="td font-medium">{disciplineNames[f.disciplina_id] ?? 'Disciplina'}</td>
                     <td className="td text-center">{f.bimestre}º BIM</td>
                     <td className="td text-center">{f.total_aulas}</td>
                     <td className="td text-center text-success font-medium">{f.total_presencas}</td>

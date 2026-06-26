@@ -2,15 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { communicationsService, studentsService, teachersService } from '../../services/api'
 import { useAuthStore } from '../../store/authStore'
-
-function getInitials(name: string) {
-  return name
-    .split(' ')
-    .slice(0, 2)
-    .map((n) => n[0])
-    .join('')
-    .toUpperCase()
-}
+import { getInitials } from '../../utils/formatters'
 
 function roleLabel(role: string | undefined) {
   if (role === 'ADMIN') return 'Administrador'
