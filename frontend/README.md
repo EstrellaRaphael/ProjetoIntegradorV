@@ -43,7 +43,11 @@ frontend/
 │   │       ├── Modal.tsx          ← Modal reutilizável (sm/md/lg)
 │   │       ├── ConfirmDialog.tsx  ← Dialog de confirmação de ação
 │   │       ├── EmptyState.tsx     ← Estado vazio com ação opcional
-│   │       └── Pagination.tsx     ← Paginação "Exibindo X–Y de Z"
+│   │       ├── Pagination.tsx     ← Paginação "Exibindo X–Y de Z"
+│   │       ├── Field.tsx          ← Par label + valor para telas de detalhe
+│   │       ├── GradeBadge.tsx     ← Badge colorido por faixa (≥7 verde, ≥5 amarelo, <5 vermelho)
+│   │       ├── StatusBadge.tsx    ← Badge de status do aluno
+│   │       └── TabNav.tsx         ← Navegação por abas
 │   ├── pages/
 │   │   ├── Login.tsx              ← Tela de login
 │   │   ├── Dashboard.tsx          ← Router de dashboard por role
@@ -79,9 +83,23 @@ frontend/
 │   │       ├── NotFound.tsx       ← 404
 │   │       └── Unauthorized.tsx   ← 403
 │   ├── services/
-│   │   └── api.ts                 ← Axios clients + services para cada MS
+│   │   ├── httpClient.ts          ← Factory de Axios + injeção de JWT + refresh 401
+│   │   ├── authService.ts         ← login, refresh, validate
+│   │   ├── studentsService.ts     ← /v1/students, frequência, histórico
+│   │   ├── teachersService.ts     ← /v1/teachers, grade, substituições
+│   │   ├── classesService.ts      ← /v1/classes, alocações
+│   │   ├── disciplinesService.ts  ← /v1/disciplines
+│   │   ├── calendarService.ts     ← /v1/calendar/events
+│   │   ├── assessmentsService.ts  ← /v1/assessments
+│   │   ├── gradesService.ts       ← /v1/grades, boletim, prova final, config
+│   │   ├── communicationsService.ts ← /v1/communications, preferências
+│   │   └── api.ts                 ← Barrel re-export (mantém imports `from '../services/api'` válidos)
+│   ├── utils/
+│   │   └── formatters.ts          ← formatDate, formatGrade, getInitials (helpers compartilhados)
 │   ├── store/
 │   │   └── authStore.ts           ← Zustand: tokens, user, login, logout
+│   │                                 (com onRehydrateStorage que re-decodifica o JWT
+│   │                                  no boot — evita logout falso ao recarregar a página)
 │   ├── types/
 │   │   └── index.ts               ← Todos os tipos TypeScript do domínio
 │   ├── router.tsx                 ← Rotas + guard RequireAuth
@@ -134,6 +152,16 @@ Design gerado pelo AI Stitch, batizado internamente de **"Nexus Acadêmico"**. O
 | `.stat-card` / `.stat-value` / `.stat-label` | Cards de estatística do dashboard |
 | `.nav-item` / `.nav-item.active` | Item de navegação da sidebar |
 | `.page-title` / `.page-subtitle` | Cabeçalho de página |
+| `.avatar-sm` / `.avatar-md` / `.avatar-lg` + `.avatar-primary` / `-secondary` / etc. | Avatar circular com iniciais e variantes de cor |
+| `.skeleton-row` / `.skeleton-card` / `.skeleton-block` | Placeholders de loading |
+| `.icon-btn` / `.icon-btn-danger` | Botões de ícone (ações em linha de tabela) |
+| `.search-wrap` / `.search-icon` / `.search-input` | Campo de busca com ícone embutido |
+| `.section-title` | Título de seção dentro de uma página |
+| `.form-grid-2` / `.form-actions` | Grid de 2 colunas e barra de ações de formulário |
+| `.detail-header` / `.detail-header-inner` / `.detail-header-info` | Cabeçalho de telas de detalhe |
+| `.step-number` | Numerador de passos (wizards) |
+| `.comm-list` / `.comm-item` / `.comm-unread-dot` / `.comm-spacer-dot` | Lista de comunicados |
+| `.tab-nav` / `.tab-nav-inner` / `.tab-nav-item` | Estilos do componente `TabNav` |
 
 ---
 
@@ -145,7 +173,11 @@ Todo o layout autenticado (`/dashboard`, `/students`, etc.) é protegido por um 
 
 ### Renovação automática de token
 
-O interceptor de resposta do Axios em `src/services/api.ts` detecta erro `401`, usa o `refreshToken` para obter um novo `accessToken` via `POST /v1/auth/refresh` e repete a requisição original automaticamente. Se o refresh falhar, faz logout e redireciona para `/login`.
+O interceptor de resposta do Axios fica em `src/services/httpClient.ts` (uma factory usada por todos os clients dos MSs). Ele detecta erro `401`, usa o `refreshToken` para obter um novo `accessToken` via `POST /v1/auth/refresh` e repete a requisição original automaticamente. Se o refresh falhar, faz logout e redireciona para `/login`.
+
+### Persistência da sessão entre recargas
+
+O `authStore` usa o middleware `persist` do Zustand para salvar os tokens no `localStorage`, e tem um callback `onRehydrateStorage` que volta a decodificar o JWT no carregamento da página — isso reidrata `user` e `isAuthenticated` a partir do token persistido, evitando que o usuário seja redirecionado para `/login` ao apertar F5.
 
 ### Navegação por role
 
@@ -156,6 +188,13 @@ A sidebar em `Sidebar.tsx` renderiza menus diferentes conforme `useAuthStore().u
 | `ADMIN` | Todas as seções |
 | `PROFESSOR` | Dashboard, Frequência, Avaliações, Notas, Comunicados |
 | `ALUNO` | Dashboard, Boletim, Frequência, Comunicados |
+
+Dentro das próprias páginas há um segundo nível de *gating* visual aplicado em cima do menu:
+
+- `DisciplineList`, `ClassList`, `ClassDetail`, `SettingsPage`, `TeacherDetail` escondem os botões/ações administrativas (`Nova Disciplina`, `Nova Turma`, `Alocar Aluno`, `Alterar` configuração, `Editar Professor`, `Adicionar Horário`) para quem não é ADMIN.
+- `AssessmentList` exibe `Nova Avaliação` para ADMIN e PROFESSOR, escondendo do ALUNO.
+- `TeacherDetail` ainda evita disparar as queries de lookup (turmas e disciplinas) para perfis não-ADMIN.
+- IDs (UUID) deixaram de aparecer na UI em ~15 locais: turmas, disciplinas e alunos agora são exibidos pelo nome, resolvido por queries de lookup do TanStack Query.
 
 ---
 
@@ -190,7 +229,7 @@ A sidebar em `Sidebar.tsx` renderiza menus diferentes conforme `useAuthStore().u
 
 ## Integração com os Microsserviços
 
-O arquivo `src/services/api.ts` cria um cliente Axios por microsserviço. As URLs são configuráveis via variáveis de ambiente:
+Os clients Axios — um por microsserviço — são criados em `src/services/httpClient.ts` através da factory `createClient(baseURL)`, que já aplica injeção de `Authorization: Bearer ...` e o interceptor de refresh em 401. Cada domínio (alunos, professores, turmas, disciplinas, calendário, avaliações, notas, comunicados) tem seu próprio arquivo `*Service.ts`, e `src/services/api.ts` reexporta tudo num único barrel para que imports antigos (`from '../../services/api'`) continuem funcionando. As URLs são configuráveis via variáveis de ambiente:
 
 | Variável | Padrão | Serviço |
 |---|---|---|

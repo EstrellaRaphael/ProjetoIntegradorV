@@ -184,7 +184,7 @@ Expõe dois decorators usados como `preHandler` nas rotas:
 
 Exemplo de uso:
 ```typescript
-fastify.get<{ Querystring: AlunoQuery }>('/students', {
+fastify.get('/students/count', {
   preHandler: fastify.requireRole(['ADMIN'])
 }, handler)
 
@@ -216,14 +216,21 @@ Base path: `/v1/students`
 
 ### `GET /v1/students`
 
-Lista todos os alunos com paginação.
+Lista alunos com paginação.
 
-**Role:** ADMIN
+**Role:** ADMIN · PROFESSOR (obrigatório informar `turma_id`)
+
+ADMIN pode listar livremente; PROFESSOR só pode listar alunos quando o query param `turma_id` é fornecido (usado para chamada de frequência e lançamento de notas). ALUNO recebe 403.
 
 **Query params:**
 - `page` (padrão: 1)
 - `limit` (padrão: 20)
 - `status` — filtrar por `ATIVO`, `INATIVO` ou `TRANSFERIDO`
+- `turma_id` — filtra pela turma atual do aluno (**obrigatório para PROFESSOR**)
+
+**Erros:**
+- `403` — PROFESSOR sem `turma_id` na query (`"Professor deve filtrar por turma_id"`)
+- `403` — ALUNO (`"Permissão insuficiente"`)
 
 **Resposta 200:**
 ```json

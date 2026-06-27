@@ -739,6 +739,21 @@ Esta seção valida que cada perfil vê apenas o que deve ver.
 | Meu Perfil | ❌ | ✅ | ✅ |
 | Matrícula Rápida (sidebar inferior) | ✅ | ❌ | ❌ |
 
+### 21.1.1 Botões e ações escondidos dentro das telas
+
+Mesmo nas telas em que um perfil tem permissão de **leitura**, as ações de escrita só aparecem para quem pode executá-las. Para validar:
+
+| Tela | Perfil | O que deve estar **escondido** |
+|---|---|---|
+| `/disciplines` | PROFESSOR / ALUNO | botão "Nova Disciplina" e ícones de editar/excluir |
+| `/classes` | PROFESSOR / ALUNO | botão "Nova Turma" |
+| `/classes/:id` | PROFESSOR / ALUNO | botão "Alocar Aluno" |
+| `/assessments` | ALUNO | botão "Nova Avaliação" (visível para ADMIN e PROFESSOR) |
+| `/settings` | PROFESSOR | botão "Alterar" da média mínima (ao acessar via URL) |
+| `/teachers/:id` | PROFESSOR (vendo o próprio perfil) | botões "Editar Professor" e "Adicionar Horário"; queries de lookup de turmas/disciplinas não são disparadas |
+
+> **Como validar visualmente:** abra a tela com cada perfil e confirme que as ações restritas não aparecem na UI — não basta confiar no bloqueio do menu lateral.
+
 ### 21.2 Como testar o controle de acesso
 
 **Teste 1 — Aluno tentando acessar rota de admin:**
@@ -838,6 +853,11 @@ Esta seção cobre os fluxos mais importantes do ponto de vista acadêmico, test
 2. Feche a aba do navegador
 3. Abra uma nova aba e acesse `http://localhost:5173`
 4. **Esperado:** Você ainda está logado (a sessão é persistida no `localStorage` via Zustand)
+
+**Teste extra (F5 em qualquer página autenticada):**
+1. Estando logado, navegue para `/students` (ou qualquer outra rota autenticada)
+2. Aperte **F5** para recarregar a página
+3. **Esperado:** A página recarrega e você continua na mesma rota, ainda logado — sem cair em `/login`. O `authStore` tem um `onRehydrateStorage` que volta a decodificar o JWT a partir do `localStorage` no boot, repopulando `user` e `isAuthenticated`.
 
 ### 23.2 Logout manual
 

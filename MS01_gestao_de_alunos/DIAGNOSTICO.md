@@ -11,7 +11,7 @@
 
 | Total de testes executados | Aprovados | Reprovados |
 |---------------------------|-----------|------------|
-| 27 | ✅ 27 | ❌ 0 |
+| 29 | ✅ 29 | ❌ 0 |
 
 **Conclusão: todos os endpoints funcionando corretamente.**
 
@@ -33,7 +33,9 @@
 |---|-------|------|---------------|-------------|-----------|
 | 4 | Cadastrar aluno (campos obrigatórios) | `POST /v1/students` | 201 | 201 | ✅ matrícula gerada automaticamente (`MAT-{timestamp}`), `status: ATIVO` |
 | 5 | Cadastrar com CPF duplicado | `POST /v1/students` | 409 | 409 | ✅ `"Registro já existe (chave única violada)"` |
-| 6 | Listar alunos | `GET /v1/students` | 200 | 200 | ✅ paginação e total corretos, ordenação alfabética |
+| 6 | Listar alunos (ADMIN) | `GET /v1/students` | 200 | 200 | ✅ paginação e total corretos, ordenação alfabética |
+| 6b | Listar alunos por turma (PROFESSOR + `turma_id`) | `GET /v1/students?turma_id=...` | 200 | 200 | ✅ retorna apenas alunos da turma informada |
+| 6c | PROFESSOR sem `turma_id` na query | `GET /v1/students` | 403 | 403 | ✅ `"Professor deve filtrar por turma_id"` |
 | 7 | Filtrar por status `ATIVO` | `GET /v1/students?status=ATIVO` | 200 | 200 | ✅ |
 | 8 | Paginação (`page=1&limit=2`) | `GET /v1/students?page=1&limit=2` | 200 | 200 | ✅ campos `page` e `limit` na resposta |
 | 9 | Contar alunos | `GET /v1/students/count` | 200 | 200 | ✅ `{"total":2}` |

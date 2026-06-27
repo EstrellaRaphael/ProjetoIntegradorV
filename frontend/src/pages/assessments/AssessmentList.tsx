@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { assessmentsService, classesService, disciplinesService } from '../../services/api'
+import { useAuthStore } from '../../store/authStore'
 import type { Avaliacao, AvaliacaoTipo } from '../../types'
 import Modal from '../../components/ui/Modal'
 import EmptyState from '../../components/ui/EmptyState'
@@ -22,6 +23,8 @@ const TIPO_BADGES: Record<AvaliacaoTipo, string> = {
 
 export default function AssessmentListPage() {
   const queryClient = useQueryClient()
+  const { user } = useAuthStore()
+  const canCreate = user?.role === 'ADMIN' || user?.role === 'PROFESSOR'
 
   const [filterBimestre, setFilterBimestre] = useState('')
   const [filterTipo, setFilterTipo] = useState('')
@@ -104,12 +107,14 @@ export default function AssessmentListPage() {
           <h1 className="page-title">Avaliações</h1>
           <p className="page-subtitle">{assessments.length} avaliações encontradas</p>
         </div>
-        <button className="btn-primary" onClick={() => setModalOpen(true)}>
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-          </svg>
-          Nova Avaliação
-        </button>
+        {canCreate && (
+          <button className="btn-primary" onClick={() => setModalOpen(true)}>
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+            Nova Avaliação
+          </button>
+        )}
       </div>
 
       {/* Filters */}
@@ -144,7 +149,7 @@ export default function AssessmentListPage() {
           <EmptyState
             title="Nenhuma avaliação encontrada"
             description="Crie uma avaliação para começar a lançar notas."
-            action={{ label: 'Nova Avaliação', onClick: () => setModalOpen(true) }}
+            action={canCreate ? { label: 'Nova Avaliação', onClick: () => setModalOpen(true) } : undefined}
           />
         ) : (
           <div className="overflow-x-auto">

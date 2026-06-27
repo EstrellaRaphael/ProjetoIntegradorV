@@ -619,6 +619,18 @@ if (role === 'ALUNO' && referenciaId !== params.id) {
 ```
 `referenciaId` vem do JWT — é o `id` do aluno na tabela `aluno`. Esse valor é comparado com o `id` da URL solicitada.
 
+### 7.5 Listagem para PROFESSOR — recorte obrigatório por turma
+
+O endpoint `GET /v1/students` historicamente era exclusivo do ADMIN. Como o portal do professor precisa carregar a lista de alunos de uma turma para fazer a chamada de frequência e para lançar notas, o handler passou a aceitar tokens PROFESSOR — **desde que a query inclua `turma_id`**:
+
+```typescript
+if (role === 'PROFESSOR' && !turma_id) {
+  return reply.code(403).send({ error: 'Professor deve filtrar por turma_id' })
+}
+```
+
+O ADMIN continua podendo listar sem restrição; o ALUNO segue bloqueado nessa rota (ele consulta seu próprio cadastro via `GET /v1/students/me` ou `GET /v1/students/:id`). Esse desenho garante que o professor enxergue apenas o recorte das suas turmas, sem expor a base completa.
+
 ---
 
 ## 8. MS-02 — Gestão de Professores
@@ -875,7 +887,11 @@ frontend/src/
 │       ├── Modal.tsx          ← Modal reutilizável
 │       ├── ConfirmDialog.tsx  ← Diálogo de confirmação ("Tem certeza?")
 │       ├── EmptyState.tsx     ← Estado vazio padronizado
-│       └── Pagination.tsx     ← Componente de paginação
+│       ├── Pagination.tsx     ← Componente de paginação
+│       ├── Field.tsx          ← Par label + valor para telas de detalhe
+│       ├── GradeBadge.tsx     ← Badge colorido por faixa de nota (≥7 verde, ≥5 amarelo, <5 vermelho)
+│       ├── StatusBadge.tsx    ← Badge de status do aluno (ATIVO/INATIVO/TRANSFERIDO)
+│       └── TabNav.tsx         ← Navegação por abas usada em telas de detalhe
 │
 ├── pages/
 │   ├── Login.tsx
@@ -902,16 +918,33 @@ frontend/src/
 │   └── errors/
 │
 ├── services/
-│   └── api.ts                 ← Todos os clientes Axios (um por microserviço)
+│   ├── httpClient.ts           ← Factory de Axios (1 client por MS) + JWT + refresh 401
+│   ├── authService.ts          ← login, refresh, validate
+│   ├── studentsService.ts      ← MS-01
+│   ├── teachersService.ts      ← MS-02
+│   ├── classesService.ts       ← MS-03 turmas
+│   ├── disciplinesService.ts   ← MS-03 disciplinas
+│   ├── calendarService.ts      ← MS-03 calendário
+│   ├── assessmentsService.ts   ← MS-04 avaliações
+│   ├── gradesService.ts        ← MS-04 notas / boletim / prova final
+│   ├── communicationsService.ts ← MS-05
+│   └── api.ts                  ← Barrel re-export (preserva imports antigos)
+│
+├── utils/
+│   └── formatters.ts           ← formatDate, formatGrade, getInitials (utilitários compartilhados)
 │
 ├── store/
 │   └── authStore.ts           ← Estado global de autenticação (Zustand)
+│                                 (com onRehydrateStorage que volta a parsear o JWT
+│                                  ao carregar a página — evita logout falso no F5)
 │
 ├── types/
 │   └── index.ts               ← Interfaces TypeScript de todos os domínios
 │
 └── router.tsx                 ← Definição de rotas + guard RequireAuth
 ```
+
+> **Refactor recente — services e utils:** o que antes era um `services/api.ts` monolítico de ~160 linhas foi quebrado em uma factory (`httpClient.ts`) mais um arquivo por domínio (`*Service.ts`). O `api.ts` continua existindo apenas como *barrel re-export*, então todos os imports antigos do tipo `import { studentsService } from '../../services/api'` continuam funcionando. Funções que estavam duplicadas em várias páginas (`getInitials`, `formatDate`, badges de nota/status, componentes `Field` locais) foram consolidadas em `utils/formatters.ts` e em `components/ui/` (Field, GradeBadge, StatusBadge, TabNav).
 
 ### 13.3 Como o login funciona (passo a passo)
 
@@ -930,7 +963,7 @@ frontend/src/
 
 ### 13.4 Como o token é enviado em cada requisição
 
-No arquivo `api.ts`, criamos um "interceptor de requisição" no Axios:
+A factory `createClient(baseURL)` em `services/httpClient.ts` (reutilizada por todos os clients de MS) registra um "interceptor de requisição" no Axios:
 
 ```typescript
 function createClient(baseURL: string) {

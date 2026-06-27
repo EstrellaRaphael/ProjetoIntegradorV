@@ -2,10 +2,13 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { gradesService } from '../../services/api'
+import { useAuthStore } from '../../store/authStore'
 import type { GradeConfig } from '../../types'
 
 export default function SettingsPage() {
   const queryClient = useQueryClient()
+  const { user } = useAuthStore()
+  const isAdmin = user?.role === 'ADMIN'
   const [editing, setEditing] = useState(false)
   const [newValue, setNewValue] = useState('')
 
@@ -95,7 +98,7 @@ export default function SettingsPage() {
                 </p>
               )}
             </div>
-            {!editing && (
+            {!editing && isAdmin && (
               <button className="btn-secondary btn-sm" onClick={startEditing}>
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.6} stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />

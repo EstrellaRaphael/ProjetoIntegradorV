@@ -139,9 +139,15 @@ ProjetoIntegradorV/
 ├── frontend/                        ← React SPA (porta 5173 dev / 80 Docker)
 │   ├── src/
 │   │   ├── components/layout/       ← AppLayout, Sidebar, Topbar
-│   │   ├── components/ui/           ← Modal, ConfirmDialog, EmptyState, Pagination
+│   │   ├── components/ui/           ← Modal, ConfirmDialog, EmptyState, Pagination,
+│   │   │                              Field, GradeBadge, StatusBadge, TabNav
 │   │   ├── pages/                   ← 22 telas (Login, Dashboards, CRUD, Boletim, etc.)
-│   │   ├── services/api.ts          ← Clientes Axios para cada microsserviço
+│   │   ├── services/                ← httpClient.ts (Axios + refresh 401) e um
+│   │   │                              service por domínio (auth, students, teachers,
+│   │   │                              classes, disciplines, calendar, assessments,
+│   │   │                              grades, communications). `api.ts` é apenas um
+│   │   │                              barrel re-export — imports antigos continuam válidos.
+│   │   ├── utils/formatters.ts      ← formatDate, formatGrade, getInitials (compartilhados)
 │   │   ├── store/authStore.ts       ← Zustand: tokens JWT, user, login, logout
 │   │   ├── types/index.ts           ← Tipos TypeScript de todos os domínios
 │   │   └── router.tsx               ← Rotas + guard RequireAuth
@@ -348,7 +354,7 @@ curl http://localhost:3005/health  # MS-05
 
 | Método | Rota | Role | Descrição |
 |---|---|---|---|
-| GET | `/v1/students` | ADMIN | Lista todos os alunos (paginado) |
+| GET | `/v1/students` | ADMIN, PROFESSOR* | Lista alunos (paginado); PROFESSOR exige `turma_id` na query |
 | GET | `/v1/students/count` | ADMIN | Total de alunos (dashboard) |
 | GET | `/v1/students/me` | ALUNO | Perfil do próprio aluno |
 | GET | `/v1/students/:id` | ADMIN, ALUNO* | Dados de um aluno |

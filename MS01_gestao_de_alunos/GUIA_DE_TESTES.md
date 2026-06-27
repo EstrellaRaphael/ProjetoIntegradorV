@@ -320,7 +320,9 @@ curl -s -X POST http://localhost:3001/v1/students \
 ### 7.2 Listar alunos
 
 **Rota:** `GET /v1/students`
-**Quem pode usar:** Somente `ADMIN`
+**Quem pode usar:** `ADMIN` (sem restrição) · `PROFESSOR` (obrigatório informar `turma_id`)
+
+> **Por que PROFESSOR pode listar?** A listagem por turma é o que alimenta a chamada de frequência e o lançamento de notas. O professor só consegue ver os alunos da turma específica que informar — qualquer chamada sem `turma_id` retorna 403.
 
 #### Listagem básica
 
@@ -376,6 +378,28 @@ curl -s "http://localhost:3001/v1/students?page=1&limit=5" \
 curl -s "http://localhost:3001/v1/students?page=2&limit=5" \
   -H "Authorization: Bearer SEU_TOKEN_AQUI"
 ```
+
+#### Filtrar por turma (obrigatório quando o token é de PROFESSOR)
+
+```bash
+# PROFESSOR — listar alunos de uma turma específica
+curl -s "http://localhost:3001/v1/students?turma_id=UUID_DA_TURMA" \
+  -H "Authorization: Bearer TOKEN_PROFESSOR"
+```
+
+**Resposta esperada (status 200):** lista contendo apenas os alunos cujo `turma_atual_id` é o informado.
+
+**Testando o erro — PROFESSOR sem `turma_id`:**
+```bash
+curl -s http://localhost:3001/v1/students \
+  -H "Authorization: Bearer TOKEN_PROFESSOR"
+```
+**Resposta esperada (status 403):**
+```json
+{ "error": "Professor deve filtrar por turma_id" }
+```
+
+> **Por que essa regra existe?** O professor precisa listar os alunos das suas turmas para fazer chamada e lançar notas — mas não deve enxergar a base completa de alunos da escola. Ao exigir `turma_id`, garantimos que ele só consulta o recorte da turma com que está trabalhando.
 
 ---
 
@@ -951,7 +975,7 @@ Se não receber essa resposta, verifique se o serviço está rodando (seção 5)
 
 | Método | Rota | Role | Descrição |
 |--------|------|------|-----------|
-| `GET` | `/v1/students` | ADMIN | Lista alunos com paginação e filtro por status |
+| `GET` | `/v1/students` | ADMIN, PROFESSOR (com `turma_id`) | Lista alunos com paginação, filtro por status e por turma |
 | `GET` | `/v1/students/count` | ADMIN | Contagem total de alunos |
 | `GET` | `/v1/students/me` | ALUNO | Perfil do aluno autenticado |
 | `GET` | `/v1/students/:id` | ADMIN, ALUNO (próprio) | Dados completos de um aluno |

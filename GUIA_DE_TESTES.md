@@ -806,7 +806,10 @@ curl -s -X POST http://localhost:3001/v1/students \
 
 ### 10.2 Listar alunos
 
+> Acessível ao ADMIN (sem restrição) e ao PROFESSOR (obrigatório informar `turma_id`). Esse recorte por turma é o que alimenta a chamada de frequência e o lançamento de notas no portal do professor.
+
 ```bash
+# ADMIN — lista completa
 curl -s http://localhost:3001/v1/students \
   -H "Authorization: Bearer SEU_TOKEN_AQUI"
 ```
@@ -818,6 +821,16 @@ curl -s http://localhost:3001/v1/students \
 curl -s "http://localhost:3001/v1/students?status=ATIVO" \
   -H "Authorization: Bearer SEU_TOKEN_AQUI"
 ```
+
+#### Filtrar por turma (obrigatório para PROFESSOR)
+
+```bash
+# PROFESSOR — listar alunos de uma turma específica
+curl -s "http://localhost:3001/v1/students?turma_id=ID_TURMA_3A" \
+  -H "Authorization: Bearer TOKEN_PROFESSOR"
+```
+
+> Se o token for de PROFESSOR e a query não tiver `turma_id`, a API retorna 403 `"Professor deve filtrar por turma_id"`.
 
 #### Paginação
 
@@ -1711,7 +1724,7 @@ Este cenário simula o fluxo real de uso do sistema, do início do ano letivo at
 
 | Método | Rota | Role | Descrição |
 |---|---|---|---|
-| GET | `/v1/students` | ADMIN | Lista alunos com paginação e filtro por status |
+| GET | `/v1/students` | ADMIN, PROF (com `turma_id`) | Lista alunos com paginação, filtro por status e por turma |
 | GET | `/v1/students/count` | ADMIN | Conta total de alunos |
 | GET | `/v1/students/me` | ALUNO | Perfil do aluno autenticado |
 | GET | `/v1/students/:id` | ADMIN, ALUNO (próprio) | Dados de um aluno |

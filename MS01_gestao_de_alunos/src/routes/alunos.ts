@@ -10,6 +10,7 @@ interface AlunoQuery {
   page?: string
   limit?: string
   status?: string
+  turma_id?: string
 }
 
 interface AlunoBody {
@@ -31,13 +32,25 @@ interface AlunoBody {
 }
 
 const alunosRoutes: FastifyPluginAsync = async (fastify) => {
-  // ── GET /v1/students — Admin lista todos ──────────────────────────────────
+  // ── GET /v1/students — Admin lista todos; Professor lista por turma_id ───
   fastify.get<{ Querystring: AlunoQuery }>('/', {
-    preHandler: fastify.requireRole(['ADMIN'])
+    preHandler: fastify.authenticate
   }, async (request, reply) => {
-    const { page = '1', limit = '20', status } = request.query
+    const { role } = request.user
+    const { page = '1', limit = '20', status, turma_id } = request.query
+
+    if (role !== 'ADMIN' && role !== 'PROFESSOR') {
+      return reply.code(403).send({ error: 'Permissão insuficiente' })
+    }
+
+    if (role === 'PROFESSOR' && !turma_id) {
+      return reply.code(403).send({ error: 'Professor deve filtrar por turma_id' })
+    }
+
     const skip = (Number(page) - 1) * Number(limit)
-    const where = status ? { status: status as aluno_status } : {}
+    const where: Record<string, unknown> = {}
+    if (status) where.status = status as aluno_status
+    if (turma_id) where.turma_atual_id = turma_id
 
     const [alunos, total] = await Promise.all([
       fastify.prisma.aluno.findMany({

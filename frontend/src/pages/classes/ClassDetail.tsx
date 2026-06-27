@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { classesService, studentsService } from '../../services/api'
+import { useAuthStore } from '../../store/authStore'
 import type { Turma, Aluno } from '../../types'
 import Modal from '../../components/ui/Modal'
 import TabNav from '../../components/ui/TabNav'
@@ -14,6 +15,8 @@ type Tab = 'dados' | 'alunos' | 'grade'
 export default function ClassDetailPage() {
   const { id } = useParams<{ id: string }>()
   const queryClient = useQueryClient()
+  const { user } = useAuthStore()
+  const isAdmin = user?.role === 'ADMIN'
   const [tab, setTab] = useState<Tab>('dados')
   const [modalOpen, setModalOpen] = useState(false)
   const [alocarForm, setAlocarForm] = useState({ aluno_id: '', data_matricula: new Date().toISOString().split('T')[0] })
@@ -95,14 +98,16 @@ export default function ClassDetailPage() {
 
       {tab === 'alunos' && (
         <div className="space-y-4">
-          <div className="flex justify-end">
-            <button className="btn-primary btn-sm" onClick={() => setModalOpen(true)}>
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-              </svg>
-              Alocar Aluno
-            </button>
-          </div>
+          {isAdmin && (
+            <div className="flex justify-end">
+              <button className="btn-primary btn-sm" onClick={() => setModalOpen(true)}>
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+                Alocar Aluno
+              </button>
+            </div>
+          )}
           <div className="table-wrap">
             <div className="overflow-x-auto">
               <table className="w-full">

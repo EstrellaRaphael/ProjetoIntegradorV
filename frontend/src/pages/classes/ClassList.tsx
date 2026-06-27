@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { classesService, calendarService } from '../../services/api'
+import { useAuthStore } from '../../store/authStore'
 import type { Turma, TurmaStatus } from '../../types'
 import Modal from '../../components/ui/Modal'
 import Pagination from '../../components/ui/Pagination'
@@ -23,6 +24,8 @@ const TURNO_BADGES: Record<TurmaStatus, string> = {
 export default function ClassListPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const { user } = useAuthStore()
+  const isAdmin = user?.role === 'ADMIN'
 
   const [page, setPage] = useState(1)
   const limit = 15
@@ -71,12 +74,14 @@ export default function ClassListPage() {
             {total > 0 && <span className="badge badge-neutral ml-1">{total} turmas</span>}
           </p>
         </div>
-        <button className="btn-primary" onClick={() => setModalOpen(true)}>
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-          </svg>
-          Nova Turma
-        </button>
+        {isAdmin && (
+          <button className="btn-primary" onClick={() => setModalOpen(true)}>
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+            Nova Turma
+          </button>
+        )}
       </div>
 
       <div className="table-wrap">
@@ -88,7 +93,7 @@ export default function ClassListPage() {
           <EmptyState
             title="Nenhuma turma encontrada"
             description="Crie uma nova turma para começar."
-            action={{ label: 'Nova Turma', onClick: () => setModalOpen(true) }}
+            action={isAdmin ? { label: 'Nova Turma', onClick: () => setModalOpen(true) } : undefined}
           />
         ) : (
           <>
