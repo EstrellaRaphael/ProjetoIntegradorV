@@ -18,7 +18,7 @@ Adota uma estratégia **stateless**: não há sessões armazenadas no servidor. 
 |---|---|
 | RF-AUTH-01 | Login com e-mail e senha, retornando JWT válido |
 | RF-AUTH-02 | Suporte aos três perfis: ADMIN, PROFESSOR, ALUNO |
-| RF-AUTH-03 | Endpoint de validação de token para uso dos microserviços e do API Gateway |
+| RF-AUTH-03 | Endpoint de validação de token para uso dos microserviços |
 | RF-AUTH-04 | Redefinição de senha via link por e-mail *(pendente)* |
 | RF-AUTH-05 | Bloqueio de usuário pelo Admin *(parcialmente — campo `ativo` na tabela)* |
 | RF-AUTH-06 | Refresh token para renovação de sessão sem novo login |
@@ -153,7 +153,7 @@ Renova o access token sem exigir novo login.
 
 ### `GET /v1/auth/validate`
 
-Valida o access token e retorna o payload decodificado. Usado pelo API Gateway e pelos microserviços que precisam inspecionar o token.
+Valida o access token e retorna o payload decodificado. Utilitário para os microserviços que precisam inspecionar o token; na prática cada MS valida o JWT localmente com o `JWT_SECRET` compartilhado.
 
 **Header:** `Authorization: Bearer <accessToken>`
 

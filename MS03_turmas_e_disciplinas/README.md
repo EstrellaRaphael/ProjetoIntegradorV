@@ -342,7 +342,7 @@ Um professor pode lecionar disciplinas diferentes para turmas diferentes. Não h
 
 ### Visibilidade do Calendário por Perfil (RF-21)
 
-O filtro de visibilidade é responsabilidade do frontend/gateway:
+O filtro de visibilidade é responsabilidade do frontend:
 - **Todos** veem eventos do tipo `FERIADO`, `RECESSO` e eventos gerais
 - **Alunos** também veem eventos de calendário da sua turma
 - A filtragem por `turma_id` deve ser feita pelo frontend usando o `turmaId` presente no JWT

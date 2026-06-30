@@ -365,7 +365,7 @@ Isso garante auditoria completa e reprodutibilidade de qualquer cálculo.
 
 ### Restrição de Acesso do Professor (RF-24)
 
-O professor só pode lançar notas em avaliações onde ele é o `professor_id`. A validação deve ser feita antes do lançamento verificando o vínculo via MS-03 (chamada síncrona — a implementar quando o API Gateway estiver ativo).
+O professor só pode lançar notas em avaliações onde ele é o `professor_id`. A validação local compara `professor_id` da avaliação com o `referenciaId` do JWT; o cruzamento adicional com o vínculo professor-turma-disciplina do MS-03 está previsto como evolução futura.
 
 ---
 

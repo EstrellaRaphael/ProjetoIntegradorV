@@ -544,7 +544,7 @@ O Auth Service (porta 3000) é o "porteiro" do sistema. Ele não pertence a nenh
 - Para alunos: busca a `turma_atual_id` para incluir no token
 - Emite o accessToken (15min) e o refreshToken (7 dias)
 - Endpoint `/refresh` para renovar o access token
-- Endpoint `/validate` para que outros serviços validem tokens (usado pelo API Gateway)
+- Endpoint `/validate` utilitário (cada MS valida o JWT localmente com o `JWT_SECRET` compartilhado)
 
 ### 6.2 Por que os microserviços não consultam o Auth a cada requisição
 
@@ -1267,7 +1267,7 @@ Resposta: Depende de qual serviço. Se o MS-01 (alunos) cair, as telas de alunos
 
 **"Por que não usaram uma API Gateway?"**
 
-Resposta: Estava planejado como entrega bônus (porta 3010), mas o foco foi em entregar os 6 microserviços funcionais. Uma API Gateway seria um sétimo serviço que receberia todas as requisições do frontend e as distribuiria para o serviço correto, centralizando rate limiting, logs e autenticação. Atualmente, o frontend faz requisições diretamente a cada serviço.
+Resposta: Por escopo. Uma API Gateway seria um serviço extra que receberia todas as requisições do frontend e as distribuiria para o serviço correto, centralizando rate limiting, logs e autenticação. Para o nosso cenário acadêmico — frontend único, sem necessidade de rate limiting agressivo e com cada MS já validando JWT localmente — o ganho não justificava a complexidade. O frontend mantém um cliente Axios por microserviço e a configuração de URLs fica centralizada em `services/httpClient.ts`. Em um cenário de produção real com clientes externos, adicionaríamos um Gateway (Kong, Nginx, ou um Fastify dedicado).
 
 ---
 

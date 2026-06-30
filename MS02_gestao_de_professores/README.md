@@ -326,11 +326,13 @@ Toda alteração na grade gera um evento_grade:
   grade_horaria editada → tipo = 'EDICAO'
   substituição criada   → tipo = 'SUBSTITUICAO'
 
-O MS-05 faz polling em evento_grade WHERE processado = FALSE
-e para cada evento:
+O MS-05 faz polling HTTP em GET /v1/teachers/schedule/changes/recent
+(que retorna evento_grade WHERE processado = FALSE) e para cada evento:
   1. Cria comunicado interno para a turma afetada
-  2. Dispara notificação externa (e-mail / WhatsApp)
-  3. Atualiza evento_grade SET processado = TRUE, processado_em = NOW()
+  2. Enfileira notificação externa (e-mail / WhatsApp) em notificacao_externa
+  3. Marca o evento como processado em memória (dedupe local — o flag
+     processado da tabela permanece FALSE até implementarmos um endpoint
+     PATCH /:id/processed no MS-02)
 ```
 
 Esse padrão é chamado de **Outbox Pattern** simplificado — garante que a comunicação ocorra mesmo que o MS-05 esteja temporariamente indisponível.
@@ -348,7 +350,7 @@ data_inicio <= CURRENT_DATE AND (data_fim IS NULL OR data_fim >= CURRENT_DATE)
 
 | Direção | Serviço | Como |
 |---|---|---|
-| Publica para | MS-05 | Tabela `evento_grade` (polling assíncrono) |
+| Publica para | MS-05 | Endpoint `GET /v1/teachers/schedule/changes/recent` (polling assíncrono sobre `evento_grade`) |
 | Referencia | MS-03 | `turma_id` e `disciplina_id` (sem FK real) |
 | Referenciado por | Auth Service | `professor.id` como `referencia_id` no JWT |
 | Referenciado por | MS-04 | `professor_id` ao verificar vínculo professor-turma |

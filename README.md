@@ -11,7 +11,7 @@
 | Raphael Estrella | MS-01 Gestão de Alunos |
 | Gabriel Christino | MS-02 Gestão de Professores |
 | André Sousa | MS-03 Turmas e Disciplinas |
-| Carlos Eduardo Gonçalves | MS-04 Avaliações e Notas + API Gateway (bônus) |
+| Carlos Eduardo Gonçalves | MS-04 Avaliações e Notas |
 | Otávio Brito | MS-05 Comunicação Escolar |
 
 ---
@@ -20,7 +20,7 @@
 
 O Sistema de Gestão Escolar é uma aplicação web desenvolvida sob arquitetura de **microserviços**, voltada ao gerenciamento completo de uma instituição de ensino. O sistema contempla cadastro de alunos e professores, organização de turmas e disciplinas, lançamento de notas e frequência, além de comunicação interna com notificações externas.
 
-A autenticação é centralizada em um **Auth Service** compartilhado que emite tokens JWT consumidos por todos os microserviços. Um **API Gateway** (entrega bônus) atua como ponto único de entrada, roteando requisições e aplicando rate limiting.
+A autenticação é centralizada em um **Auth Service** compartilhado que emite tokens JWT consumidos por todos os microserviços. O frontend consome cada microserviço diretamente via Axios (um cliente por MS), e cada serviço valida o JWT localmente usando o `JWT_SECRET` compartilhado — modelo stateless, sem chamada round-trip ao Auth a cada requisição.
 
 ---
 
@@ -31,16 +31,11 @@ A autenticação é centralizada em um **Auth Service** compartilhado que emite 
                         │     React Frontend   │
                         │     (porta 5173)     │
                         └──────────┬──────────┘
-                                   │ HTTPS
-                        ┌──────────▼──────────┐
-                        │     API Gateway      │  ← bônus (porta 3010)
-                        │  rate limit · logs   │
-                        └──────────┬──────────┘
-                                   │
+                                   │ HTTP/HTTPS (1 cliente Axios por MS)
               ┌────────────────────┼────────────────────┐
               │          ┌─────────▼──────┐             │
-              │          │  Auth Service  │             │
-              │          │   porta 3000   │             │
+              │          │  Auth Service  │  ← emite e valida JWT
+              │          │   porta 3000   │
               │          └────────────────┘             │
               │                                         │
    ┌──────────▼──┐  ┌───────────┐  ┌───────────┐  ┌───▼───────┐  ┌───────────┐
@@ -59,14 +54,15 @@ A autenticação é centralizada em um **Auth Service** compartilhado que emite 
 ### Comunicação entre Microserviços
 
 **Síncrona (REST):**
-- API Gateway → Auth Service: validação de JWT em cada requisição
-- MS-04 → MS-01: verifica vínculo aluno-turma antes de lançar nota
-- MS-04 → MS-03: verifica vínculo professor-turma-disciplina
-- MS-05 → MS-01 / MS-03: resolve destinatários ao criar comunicado
+- Frontend → Auth Service: login, refresh e validação de tokens
+- MS-05 → MS-02: lista professores para `publico_alvo = TODOS_PROFESSORES`
+- MS-05 → MS-03: resolve alunos da turma para `publico_alvo = TURMA_ESPECIFICA`
 
-**Assíncrona (polling via tabela de eventos no banco):**
-- MS-02 registra `evento_grade` → MS-05 consome e gera comunicado automático
-- MS-03 registra evento de calendário → MS-05 dispara notificação
+> Cada microserviço valida o JWT localmente com `JWT_SECRET` — modelo stateless, sem chamada round-trip ao Auth a cada requisição.
+
+**Assíncrona (Outbox Pattern):**
+- MS-02 grava `evento_grade` → MS-05 polla `GET /v1/teachers/schedule/changes/recent` (a cada 30s) → gera comunicado automático e enfileira notificações
+- Eventos de calendário do MS-03 hoje só geram comunicado quando o ADMIN/PROFESSOR cria um comunicado manualmente (RF-38 — integração automática prevista, ainda não implementada)
 
 ---
 
@@ -93,7 +89,6 @@ ProjetoIntegradorV/
 ├── script_auth.sql                  ← RODAR ANTES de usar o auth-service
 ├── docker-compose.yml               ← sobe todos os serviços
 ├── gestao_escolar_requisitos.docx   ← documento de requisitos v3.0
-├── database.txt                     ← credenciais do banco remoto
 │
 ├── auth-service/                    ← Auth compartilhado (porta 3000)
 │   ├── src/
@@ -157,9 +152,12 @@ ProjetoIntegradorV/
 │   └── README.md
 │
 ├── create_demo_users.js             ← Script para criar users professor@/aluno@ no auth-service
-├── .claude/launch.json              ← Config de preview para todos os servidores
+├── gestao_escolar.postman_collection.json ← Collection Postman com todos os endpoints
+├── postman/globals/                 ← Ambientes/variáveis globais Postman
 ├── GUIA_DE_TESTES.md                ← Guia completo de execução e testes (APIs)
-└── GUIA_DE_TESTES_FRONTEND.md       ← Guia completo de testes do frontend
+├── GUIA_DE_TESTES_FRONTEND.md       ← Guia completo de testes do frontend
+├── GUIA_TECNICO_COMPLETO.md         ← Guia técnico explicativo
+└── GUIA_DE_ESTUDO.md                ← Guia de estudo para a apresentação
 ```
 
 ---
@@ -178,7 +176,7 @@ O banco é hospedado remotamente no servidor da instituição. Cada microserviç
 
 **Servidor:** `edumysql.acesso.rj.senac.br:3306`
 
-> As credenciais completas estão em `database.txt`. Não versionar este arquivo em repositório público.
+> As credenciais completas ficam no `.env` de cada serviço (não versionado). Use `.env.example` como referência.
 
 ### Permissões
 
@@ -347,7 +345,7 @@ curl http://localhost:3005/health  # MS-05
 |---|---|---|---|
 | POST | `/v1/auth/login` | — | Login com email e senha |
 | POST | `/v1/auth/refresh` | — | Renova access token com refresh token |
-| GET | `/v1/auth/validate` | Bearer token | Valida token (usado pelos MSs e Gateway) |
+| GET | `/v1/auth/validate` | Bearer token | Valida token (utilitário; cada MS valida o JWT localmente) |
 | GET | `/health` | — | Health check |
 
 ### MS-01 Gestão de Alunos (porta 3001)
@@ -478,12 +476,18 @@ com justificativa obrigatória registrada em override_frequencia.
 
 ```
 Toda alteração na grade (criação, edição, substituição) gera um
-registro na tabela evento_grade com processado = FALSE.
+registro na tabela evento_grade do MS-02 com processado = FALSE.
 
-O MS-05 faz polling dessa tabela e para cada evento não processado:
+O MS-05 polla via HTTP GET /v1/teachers/schedule/changes/recent
+a cada 30s e para cada evento ainda não visto:
   1. Cria comunicado interno informando a alteração
-  2. Dispara notificação por e-mail (e opcionalmente WhatsApp)
-  3. Marca o evento como processado = TRUE
+  2. Enfileira notificação externa em notificacao_externa (e-mail)
+  3. Marca o evento como processado em memória (dedupe local)
+
+O notificacaoWorker do MS-05 consome notificacao_externa com
+retry e backoff exponencial (1 min, 5 min, 15 min; até 3 tentativas).
+O envio real (Nodemailer/Twilio) está mockado — basta configurar
+SMTP_HOST / TWILIO_* para ativar.
 ```
 
 ### Calendário e Notificações (MS-03 → MS-05)
